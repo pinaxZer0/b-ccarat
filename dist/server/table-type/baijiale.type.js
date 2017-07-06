@@ -24,7 +24,7 @@ class Baijiale extends TableBase {
 		this.roomid=roomid;
 		this.profits=[];
 		this.profits.sum=0;
-		this._quitList=[];
+		// this._quitList=[];
 		this.roomtype='baccarat';
 		this.gamedata.opt=merge({minZhu:10, maxZhu:7500, minDui:1, maxDui:750, maxHe:950}, opt);
 		this.opt=this.gamedata.opt;
@@ -73,32 +73,41 @@ class Baijiale extends TableBase {
 		this.msgDispatcher.emit('userin', user);
 		// if (emptyseat==1) this.run();		
 	}
-	quit(user) {
-		this._quitList.push(user);
-	}
+	// quit(user) {
+	// 	this._quitList.push(user);
+	// }
 	mk_transfer_gamedata(obj, idx) {
 		// 简化user对象，只传输id nickname face level score
 		//console.log(JSON.stringify(obj));
 		var self = this;
-		if (!obj.seats) return {scene:obj};
+		if (!obj.deal && !obj.seats) return {scene:obj};
 		obj=clone(obj);
-		for (var i in obj.seats) {
-			var seat =obj.seats[i];
-			if (!seat) continue;
-			var u=this.scene.seats[i].user;
-			if (u) {
-				seat.user={id:u.id, nickname:u.nickname, face:u.dbuser.face, coins:u.coins, level:u.level, offline:seat.offline};
+		if (obj.deal) {
+			for (var i in obj.deal) {
+				delete obj.deal[i].user;
+			}
+		}
+		if (obj.seats) {
+			for (var i in obj.seats) {
+				var seat =obj.seats[i];
+				if (!seat) continue;
+				var u=this.scene.seats[i].user;
+				if (u) {
+					seat.user={id:u.id, nickname:u.nickname, face:u.dbuser.face, coins:u.coins, level:u.level, offline:seat.offline};
+				}
 			}
 		}
 		return {scene:obj};
 	}
 	newgame() {
+		debugout(this.gamedata.roomid, 'new game');
 		this.gamedata.setnum=0;
 		this.gamedata.his=[];
 		this.q.push(this.qiepai.bind(this));
 		this.newround();
 	}
 	newround() {
+		debugout(this.gamedata.roomid, 'new round');
 		this.q.push([
 			this.waitXiazhu.bind(this),
 			this.fapai.bind(this),
@@ -131,6 +140,7 @@ class Baijiale extends TableBase {
 		});
 	}
 	qiepai(cb) {
+		debugout(this.roomid, 'qiepai');
 		// 找到所有在线的玩家，随机选一个人来切牌
 		var self=this;
 		this.gamedata.status=GAME_STATUS.QIEPAI;
@@ -152,6 +162,7 @@ class Baijiale extends TableBase {
 		});
 	}
 	waitXiazhu(callback) {
+		debugout(this.roomid, 'waitXiazhu');
 		var self=this, gd=this.gamedata;
 		this.gamedata.status=GAME_STATUS.KAIJU;
 		// var vus=this.allusers(true);
@@ -160,16 +171,18 @@ class Baijiale extends TableBase {
 		function handleXiazhu(pack, user) {
 			var deal=gd.deal[user.id];
 			if (!deal) {
-				gd.deal[user.id]={xianDui:0, zhuangDui:0, he:0, xian:0, zhuang:0};
+				gd.deal[user.id]={xianDui:0, zhuangDui:0, he:0, xian:0, zhuang:0, user:user};
 				deal=gd.deal[user.id];
 			}
 			if (deal.sealed) return;
+			console.log(pack, total);
 			if (pack.xian) {
 				if (pack.xian<gd.opt.minZhu) return user.send({err:'最少下注'+gd.opt.minZhu});
 				if (pack.xian>gd.opt.maxZhu) return user.send({err:'最多下注'+gd.opt.maxZhu});
 				if (user.coins<pack.xian) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
 				if ((total.xian+pack.xian)>=(total.zhuang+gd.opt.maxZhu/3)) return user.send({err:'不能继续压闲'});
 				deal.xian+=pack.xian;
+				total.xian+=pack.xian;
 				user.coins-=pack.xian;
 			}
 			else if (pack.zhuang) {
@@ -178,13 +191,15 @@ class Baijiale extends TableBase {
 				if (user.coins<pack.zhuang) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
 				if ((total.zhuang+pack.zhuang)>=(total.xian+gd.opt.maxZhu/3)) return user.send({err:'不能继续压庄'});
 				deal.zhuang+=pack.zhuang;
+				total.zhuang+=pack.zhuang;
 				user.coins-=pack.zhuang;
 			}
 			else if (pack.he) {
 				if (pack.he<gd.opt.minDui) return user.send({err:'最少下注'+gd.opt.minDui});
 				if (user.coins<pack.he) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
-				if ((total.he+pack.xian)>=gd.opt.maxHe) return user.send({err:'不能继续压和'});
+				if ((total.he+pack.he)>=gd.opt.maxHe) return user.send({err:'不能继续压和'});
 				deal.he+=pack.he;
+				total.he+=pack.he;
 				user.coins-=pack.he;
 			}
 			else if (pack.xianDui) {
@@ -192,6 +207,7 @@ class Baijiale extends TableBase {
 				if (user.coins<pack.xianDui) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
 				if ((total.xianDui+pack.xianDui)>=gd.opt.maxDui) return user.send({err:'不能继续压闲对'});
 				deal.xianDui+=pack.xianDui;
+				total.xianDui+=pack.xianDui;
 				user.coins-=pack.xianDui;
 			}
 			else if (pack.zhuangDui) {
@@ -200,22 +216,9 @@ class Baijiale extends TableBase {
 				if (user.coins<pack.zhuangDui) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
 				if ((total.zhuangDui+pack.zhuangDui)>=gd.opt.maxDui) return user.send({err:'不能继续压庄对'});
 				deal.zhuangDui+=pack.zhuangDui;
+				total.zhuangDui+=pack.zhuangDui;
 				user.coins-=pack.zhuangDui;
-			}
-			
-			// for (var k in pack) {
-			// 	if (['xian', 'zhuang', 'he', 'xianDui', 'zhuangDui'].indexOf(k)<0) continue;
-			// 	if (user.coins>=clientdeal[k]) {
-			// 		deal[k]+=pack[k];
-			// 		user.coins-=pack[k];
-			// 	} else user.send({err:'金币不足，请充值'});
-			// }
-
-			total.xianDui+=pack.xianDui;
-			total.zhuangDui+=pack.zhuangDui;
-			total.he+=pack.he;
-			total.xian+=pack.xian;
-			total.zhuang+=pack.zhuang;			
+			}			
 		}
 		function handleCancelXiazhu(pack, user) {
 			var deal=gd.deal[user.id];
@@ -226,7 +229,10 @@ class Baijiale extends TableBase {
 			total.he-=deal.he;
 			total.xian-=deal.xian;
 			total.zhuang-=deal.zhuang;
-			deal.xian=deal.xianDui=deal.zhuangDui=deal.he=deal.xian=deal.zhuang=0;
+			var reback=(deal.xian||0)+(deal.xianDui||0)+(deal.zhuangDui||0)+(deal.he||0)+(deal.zhuang||0);
+			deal.user.coins+=reback;
+			deal.xian=deal.xianDui=deal.zhuangDui=deal.he=deal.zhuang=0;
+			// delete gd.deal[user.id];
 		}
 		function handleConfirmXiazhu(pack, user) {
 			var deal=gd.deal[user.id];
@@ -295,6 +301,7 @@ class Baijiale extends TableBase {
 		this.gamedata.game.playHand();
 	}
 	jiesuan(cb) {
+		debugout(this.roomid, 'jiesuan');
 		this.gamedata.status=0;
 		var profit=0;
 		var factor={xian:1, zhuang:0.95, xianDui:11, zhuangDui:11, he:8};
@@ -322,32 +329,35 @@ class Baijiale extends TableBase {
 
 		var now=new Date();
 		for (var k in gd.deal) {
-			var orgCoins=gd.seats[k].user.coins;
 			var deal=gd.deal[k];
+			var orgCoins=deal.user.coins;
 			for (var i=0;i<winArr.length; i++) {
 				var usercoins=deal[winArr[i]]
 				if (!usercoins) continue;
 				var delta=usercoins*factor[winArr[i]];
-				gd.seats[k].user.coins+=(delta+usercoins);
+				deal.user.coins+=(delta+usercoins);
 				profit-=delta;
 			}
 			for (var i=0; i<loseArr.length; i++) {
 				profit+=(deal[loseArr[i]]||0);
 			}
-			db.games.insert({user:k, deal:deal, r:r, oldCoins:orgCoins, newCoins:gd.seats[k].user.coins, t:now});
+			var newCoins=deal.user.coins;
+			delete deal.user;
+			g_db.games.insert({user:k, deal:deal, r:r, oldCoins:orgCoins, newCoins:newCoins, t:now});
 		}
 		this.profits.push({profit:profit, t:now, set:gd.setnum});
 		this.profits.sum+=profit;
 		srv_state.total_profit+=profit;
 
-		if (this._quitList.length>0) {
-			for (var i=0; i<this._quitList.length; i++) super.quit(this._quitList[i]);
-			this._quitList=[];
-		}
+		// if (this._quitList.length>0) {
+		// 	for (var i=0; i<this._quitList.length; i++) super.quit(this._quitList[i]);
+		// 	this._quitList=[];
+		// }
 
 		gd.setnum++;
 		(function(next) {
 			if (self.allusers().length==0) {
+				debugout(self.roomid, 'no enough user');
 				// wait user enter to continue
 				self.msgDispatcher.once('userin', function() {
 					next();

@@ -7,8 +7,6 @@ var debugout=require('debugout')(args.debugout);
 var onlineUsers=require('./online.js'), alltables=require('./tables.js');
 var User=require('./User.js');
 
-var g_db=null;
-
 function send(data) {
 	var payload=JSON.stringify(data);
 	function _h(err) {

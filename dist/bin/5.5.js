@@ -54,11 +54,11 @@ webpackJsonp([5],{
 				obj.getChild('n87').text = '-';
 				obj.getChild('n89').text = '-';
 				obj.getChild('n91').text = tbl.online;
+				obj.offClick(obj, obj._clickHandler);
 				obj._clickHandler = function () {
 					_socket.sendp({ c: 'join', code: tbl.roomid });
 				};
-				obj.offClick(null, obj._clickHandler);
-				obj.onClick(null, obj._clickHandler);
+				obj.onClick(obj, obj._clickHandler);
 				var his = tbl.his;
 				if (!his || his.length == 0) return;
 				new BeadPlate(obj.getChild('n17').getChild('n1')).refreshRoad(tbl.his);
@@ -129,8 +129,10 @@ webpackJsonp([5],{
 			key: 'active',
 			value: function active() {
 				var self = this;
+				fairygui.GRoot.inst.showModalWait();
 				_socket.sendp({ c: 'alltables' });
 				netmsg.once('alltables', this, function (pack) {
+					fairygui.GRoot.inst.closeModalWait();
 					console.log(pack);
 					this.tables = [];
 					for (var id in pack.tables) {
@@ -265,7 +267,7 @@ webpackJsonp([5],{
 					winCtrl.selectedIndex = 0;
 					if (!pan) return;
 					if (pan.win == 'banker') winCtrl.selectedIndex = 1;else if (pan.win == 'player') winCtrl.selectedIndex = 2;else winCtrl.selectedIndex = 3;
-					if (pan.demo) winCtrl.getTransition('t0').play();else winCtrl.getTransition('t0').stop();
+					if (pan.demo) obj.getTransition('t0').play();else obj.getTransition('t0').stop();
 
 					obj.getChild('n6').visible = pan.bankerPair;
 					obj.getChild('n7').visible = pan.playerPair;
@@ -458,7 +460,7 @@ webpackJsonp([5],{
 					var pan = data[i].result;
 					var winCtrl = obj.getController('c1');
 					if (pan.win == null) winCtrl.selectedIndex = 0;else if (pan.win == 'banker') winCtrl.selectedIndex = 1;else if (pan.win == 'player') winCtrl.selectedIndex = 2;
-					if (pan.demo) winCtrl.getTransition('t0').play();else winCtrl.getTransition('t0').stop();
+					if (pan.demo) obj.getTransition('t0').play();else obj.getTransition('t0').stop();
 
 					obj.getChild('n68').visible = pan.bankerPair;
 					obj.getChild('n69').visible = pan.playerPair;
@@ -614,7 +616,7 @@ webpackJsonp([5],{
 					obj.y = data[i].row * 7 + 1;
 					road.addChild(obj);
 				}
-				this.view.scroll;
+				// this.view.scroll
 			}
 		}, {
 			key: 'cols',

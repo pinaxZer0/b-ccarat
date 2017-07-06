@@ -47,7 +47,7 @@ webpackJsonp([6],Array(151).concat([
 					winCtrl.selectedIndex = 0;
 					if (!pan) return;
 					if (pan.win == 'banker') winCtrl.selectedIndex = 1;else if (pan.win == 'player') winCtrl.selectedIndex = 2;else winCtrl.selectedIndex = 3;
-					if (pan.demo) winCtrl.getTransition('t0').play();else winCtrl.getTransition('t0').stop();
+					if (pan.demo) obj.getTransition('t0').play();else obj.getTransition('t0').stop();
 
 					obj.getChild('n6').visible = pan.bankerPair;
 					obj.getChild('n7').visible = pan.playerPair;
@@ -240,7 +240,7 @@ webpackJsonp([6],Array(151).concat([
 					var pan = data[i].result;
 					var winCtrl = obj.getController('c1');
 					if (pan.win == null) winCtrl.selectedIndex = 0;else if (pan.win == 'banker') winCtrl.selectedIndex = 1;else if (pan.win == 'player') winCtrl.selectedIndex = 2;
-					if (pan.demo) winCtrl.getTransition('t0').play();else winCtrl.getTransition('t0').stop();
+					if (pan.demo) obj.getTransition('t0').play();else obj.getTransition('t0').stop();
 
 					obj.getChild('n68').visible = pan.bankerPair;
 					obj.getChild('n69').visible = pan.playerPair;
@@ -396,7 +396,7 @@ webpackJsonp([6],Array(151).concat([
 					obj.y = data[i].row * 7 + 1;
 					road.addChild(obj);
 				}
-				this.view.scroll;
+				// this.view.scroll
 			}
 		}, {
 			key: 'cols',
@@ -448,7 +448,7 @@ webpackJsonp([6],Array(151).concat([
 	var Handler = laya.utils.Handler;
 	var turf = window.turf = __webpack_require__(204);
 	var randomPointsOnPolygon = __webpack_require__(205);
-
+	var wins = __webpack_require__(31);
 	var ROAD = __webpack_require__(151),
 	    BeadPlate = ROAD.BeadPlate,
 	    BigRoad = ROAD.BigRoad,
@@ -513,7 +513,9 @@ webpackJsonp([6],Array(151).concat([
 				for (var i = 0; i < coinMap.length; i++) {
 					if (coinMap[i] > gd.opt.minZhu) break;
 				}
+				i--;
 				if (i >= coinMap.length - 5) i = coinMap.length - 5;
+				if (i < 0) i = 0;
 				s.setPosX(i * 80 + 5);
 				//self.roadBeadPlate.refreshBeadPlate(self.gamedata.his);
 			}).on('statuschgd', function () {
@@ -543,15 +545,15 @@ webpackJsonp([6],Array(151).concat([
 			}).on('roomidchgd', function () {
 				self._view.getChild('n6').text = '房间号：' + self.gamedata.roomid;
 			}).on('onlinechgd', function () {
-				self._view.getChild('n8').getChild('n2').text = self.gamedata.online;
+				self._view.getChild('n182').getChild('n2').text = self.gamedata.online;
 			}).on('game.leftCardschgd', function () {
 				self._view.getChild('n46').text = self.gamedata.game.leftCards;
 			}).on('optchgd', function chgZhu() {
 				var info = self._view.getChild('n2'),
 				    game = self.gamedata.opt;
 				info.getChild('n35').text = game.minZhu + '-' + game.maxZhu;
-				info.getChild('n68').text = game.minTie || 1;
-				info.getChild('n70').text = (game.maxTie || 950) + '/' + (game.maxPair || 750);
+				info.getChild('n68').text = game.minDui || 1;
+				info.getChild('n70').text = (game.maxHe || 750) + '/' + (game.maxDui || 950);
 			}).on('hischgd', function () {
 				var info = self._view.getChild('n2'),
 				    his = self.gamedata.his;
@@ -1061,6 +1063,9 @@ webpackJsonp([6],Array(151).concat([
 						_socket.sendp(merge({ c: 'table.xiazhu' }, room._myLastXiazhu));
 					});
 					_view.getChild('n22').onClick(null, function () {
+						var deal = room.gamedata.deal[me.id];
+						if (!deal) return;
+						if (!deal.xian && !deal.zhuang && !deal.xianDui && !deal.zhuangDui && !deal.he) return;
 						_socket.sendp({ c: 'table.confirmXiazhu' });
 						['n20', 'n22', 'n21', 'n19'].forEach(function (n) {
 							_view.getChild(n).enabled = false;
@@ -1078,6 +1083,10 @@ webpackJsonp([6],Array(151).concat([
 					});
 					_view.getChild('n25').onClick(null, function () {
 						s.setPosX(s.posX + 80, true);
+					});
+					_view.getChild('n182').onClick(null, function () {
+						var win = new wins.RestPlayersWin(room.gamedata);
+						win.show();
 					});
 					room.afterCreateView();
 					cb(null, room);

@@ -14163,8 +14163,8 @@ webpackJsonp([4],Array(108).concat([
 		}, {
 			key: 'active',
 			value: function active() {
-				var name = this._view.getChild('n6').text = startup_param.id || startup_param.login || startup_param.reg; //loginInfo.login;
-				var pwd = this._view.getChild('n8').text = startup_param.pwd; //loginInfo.pwd;
+				var name = this._view.getChild('n6').text = startup_param.id || startup_param.login || startup_param.reg || ''; //loginInfo.login;
+				var pwd = this._view.getChild('n8').text = startup_param.pwd || ''; //loginInfo.pwd;
 				if (name && pwd) this._view.getController('c1').selectedIndex = 1;
 			}
 		}, {
@@ -14266,19 +14266,19 @@ webpackJsonp([4],Array(108).concat([
 /* 112 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__.p + "baccarat@atlas0.png?9f3ea7e08dae5a4e4d760fa770129b80";
+	module.exports = __webpack_require__.p + "baccarat@atlas0.png?dcd90c50697e748b0e624a00eb7dea3c";
 
 /***/ },
 /* 113 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__.p + "baccarat@atlas0_1.png?de52275fc2aca9c6da2ce1f5e5a32f1d";
+	module.exports = __webpack_require__.p + "baccarat@atlas0_1.png?7448dcb358f01fb57ab95d56d6c63834";
 
 /***/ },
 /* 114 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__.p + "baccarat.fui?9965ac59ce9bed7e3d447fd8c3678293";
+	module.exports = __webpack_require__.p + "baccarat.fui?94ea0662e46c0498f0f755346fa06cb7";
 
 /***/ },
 /* 115 */

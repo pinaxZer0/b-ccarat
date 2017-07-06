@@ -73,7 +73,7 @@
 /******/ 			script.charset = 'utf-8';
 /******/ 			script.async = true;
 
-/******/ 			script.src = __webpack_require__.p + "" + chunkId + "." + ({"1":"default","2":"wechat"}[chunkId]||chunkId) + ".js?" + {"1":"9bad11715efd39e60cbe","2":"61b2d654cbb835457179","3":"2855913ece9de6451d4e","4":"68bf3e912752c66eaddc","5":"dc4a7fa8433fd0c8ec83","6":"e4c6761f0af83615c2d3"}[chunkId] + "";
+/******/ 			script.src = __webpack_require__.p + "" + chunkId + "." + ({"1":"default","2":"wechat"}[chunkId]||chunkId) + ".js?" + {"1":"9bad11715efd39e60cbe","2":"61b2d654cbb835457179","3":"2855913ece9de6451d4e","4":"311cb36e35f1faf3cb73","5":"9e4b8daa7350108a95a6","6":"39db93f809209e257d95"}[chunkId] + "";
 /******/ 			head.appendChild(script);
 /******/ 		}
 /******/ 	};
@@ -177,8 +177,8 @@
 		}
 
 		var url_option = url.parse(location.href, true),
-		    startup_param = window.startup_param = startup_param ? merge(url_option.query, startup_param) : url_option.query;
-		if (startup_param.id == null) {
+		    startup_param = startup_param ? merge(url_option.query, startup_param) : url_option.query;
+		if (startup_param.login == null && startup_param.reg == null && startup_param.id == null) {
 			var p = localStorage.getItem('id');
 			if (p) {
 				try {
@@ -226,6 +226,7 @@
 			serverpath += '/' + path.basename(url_option.pathname);
 		}
 		console.log(startup_param);
+		window.startup_param = startup_param;
 
 		var accWechatIntf = window.accWechatIntf = function () {
 			window.getAjax = getAjax;
@@ -458,27 +459,6 @@
 					var tipon = global.tipon = function (str, opt) {
 						return new wins.TipWin(str, opt);
 					};
-					if (startup_param.showlogin) {
-						if (!!window.cordova) {
-							var onDeviceReady = function onDeviceReady() {
-								if (window.device.platform === 'iOS') {
-									cordova.plugins.iosrtc.registerGlobals();
-								}
-								StatusBar.hide();
-								ui.active('login', null, function (err, view) {
-									window.view = view;
-									if (err) return console.log(err);
-									view.active && view.active();
-								});
-							};
-
-							return document.addEventListener('deviceready', onDeviceReady, false);
-						} else return ui.active('login', null, function (err, view) {
-							window.view = view;
-							if (err) return console.log(err);
-							view.active && view.active();
-						});
-					}
 					// finally ,open connect
 					Laya.loader.load([{ url: __webpack_require__(112), type: laya.net.Loader.IMAGE }, { url: __webpack_require__(153), type: laya.net.Loader.IMAGE }, { url: __webpack_require__(114), type: laya.net.Loader.BUFFER }], Handler.create(null, function () {
 						if (window['splash']) {
@@ -492,6 +472,30 @@
 						fairygui.UIConfig.globalModalWaiting = fairygui.UIPackage.getItemURL("Package1", "loading");
 						fairygui.UIObjectFactory.setPackageItemExtension(fairygui.UIPackage.getItemURL("Package1", "loading"), GlobalWaiting);
 					}));
+					if (startup_param.showlogin) {
+						fairygui.GRoot.inst.showModalWait();
+						if (!!window.cordova) {
+							var onDeviceReady = function onDeviceReady() {
+								if (window.device.platform === 'iOS') {
+									cordova.plugins.iosrtc.registerGlobals();
+								}
+								StatusBar.hide();
+								ui.active('login', null, function (err, view) {
+									window.view = view;
+									if (err) return console.log(err);
+									view.active && view.active();
+									fairygui.GRoot.inst.closeModalWait();
+								});
+							};
+
+							return document.addEventListener('deviceready', onDeviceReady, false);
+						} else return ui.active('login', null, function (err, view) {
+							window.view = view;
+							if (err) return console.log(err);
+							view.active && view.active();
+							fairygui.GRoot.inst.closeModalWait();
+						});
+					}
 					return initnet(startup_param);
 				}.apply(null, __WEBPACK_AMD_REQUIRE_ARRAY__));});
 			}.apply(null, __WEBPACK_AMD_REQUIRE_ARRAY__));});
@@ -559,7 +563,7 @@
 				} catch (e) {
 					return console.log(e, msg.data);
 				}
-				// console.log('recv', msg);
+				console.log('recv', msg);
 				if (pack.seq) msgloop.push(pack);else this.msg(pack);
 			};
 			var _firstsetme = true;
@@ -11832,7 +11836,7 @@
 				this.contentPane.getChild('n10').onClick(null, function () {
 					var money = Number(pane.getChild('n8').text);
 					if (isNaN(money)) return tipon('输入错误').popup();
-					if (money > me.savedMoney) return tipon('没有那么多钱可存').popup();
+					if (money > me.coins) return tipon('没有那么多钱可存').popup();
 					_socket.sendp({ c: 'safe.deposit', coins: money });
 					self.hide();
 				});
@@ -12046,14 +12050,14 @@
 				obj.getChild('n30').text = printf('和/对限注 %d-%d/%d', req.minDui, req.maxHe, req.maxDui);
 				obj.getChild('n20').text = req.online;
 				obj.getChild('n21').text = req.profit;
-				obj.getChild('n28').offClick(null, obj._clickHandler);
+				obj.getChild('n28').offClick(self, obj._clickHandler);
 				obj._clickHandler = function () {
 					if (confirm('确定关闭服务器？\r\n即使服务器被关闭，正在游戏的玩家不会被踢出，只是不在有人能够进入这个房间')) {
 						_socket.sendp({ c: 'closeServer', roomid: req.roomid });
 						self.refresh();
 					}
 				};
-				obj.getChild('n28').onClick(null, obj._clickHandler);
+				obj.getChild('n28').onClick(self, obj._clickHandler);
 			}
 		}, {
 			key: 'hide',
@@ -12088,7 +12092,7 @@
 			}
 			str += ',';
 		}
-		return str.substring(0, -1);
+		return str.substr(0, -1);
 	}
 	function cardResult(cardarr) {
 		var ret = 0;
@@ -12135,7 +12139,7 @@
 			win += delta;
 		}
 		for (var i = 0; i < loseArr.length; i++) {
-			var usercoins = deal[winArr[i]];
+			var usercoins = deal[loseArr[i]];
 			if (!usercoins) continue;
 			win -= usercoins;
 		}
@@ -12173,15 +12177,15 @@
 						for (var k in data.deal) {
 							var d = data.deal[k];
 							if (d) {
-								item.getChild(eleNo).text = _mapOfDealSector[k];
-								item.getChild(eleNo + 1).text = d;
+								item.getChild('n' + eleNo).text = _mapOfDealSector[k];
+								item.getChild('n' + (eleNo + 1)).text = d;
 								eleNo += 2;
 							}
 						}
-						item.getChild('n36').text = '庄' + cardValues(data.bankerCard);
-						item.getChild('n38').text = '闲' + cardValues(data.playerCard);
-						item.getChild('n40').text = '庄' + cardResult(data.bankerCard) + '点';
-						item.getChild('n45').text = '闲' + cardResult(data.playerCard) + '点';
+						item.getChild('n36').text = '庄' + cardValues(data.r.bankerCard);
+						item.getChild('n38').text = '闲' + cardValues(data.r.playerCard);
+						item.getChild('n40').text = '庄' + cardResult(data.r.bankerCard) + '点';
+						item.getChild('n45').text = '闲' + cardResult(data.r.playerCard) + '点';
 						item.getChild('n42').text = parseR(data.r);
 						item.getChild('n22').text = winCoins(data.deal, data.r);
 						list.addChild(item);
@@ -12192,6 +12196,7 @@
 		}, {
 			key: 'hide',
 			value: function hide() {
+				_get(PersonHisWin.prototype.__proto__ || Object.getPrototypeOf(PersonHisWin.prototype), 'hide', this).call(this);
 				netmsg.off('personhis', this, this._nmh);
 			}
 		}]);
@@ -12205,7 +12210,7 @@
 		function RestPlayersWin(gamedata) {
 			_classCallCheck(this, RestPlayersWin);
 
-			var _this13 = _possibleConstructorReturn(this, (RestPlayersWin.__proto__ || Object.getPrototypeOf(RestPlayersWin)).call(this, 'restPlayer'));
+			var _this13 = _possibleConstructorReturn(this, (RestPlayersWin.__proto__ || Object.getPrototypeOf(RestPlayersWin)).call(this, 'restPlayers'));
 
 			_this13.gamedata = gamedata;
 			_this13.users = Object.keys(gamedata.seats);
@@ -12221,12 +12226,12 @@
 				list.itemRenderer;
 				list.setVirtual();
 				list.itemRenderer = Handler.create(this, this.renderTables, null, false);
-				list.numItems = users.length;
+				list.numItems = this.users.length;
 			}
 		}, {
 			key: 'renderTables',
 			value: function renderTables(idx, item) {
-				var user = this.gamedata.seats[this.users[idx]];
+				var user = this.gamedata.seats[this.users[idx]].user;
 				item.getChild('n8').url = user.face;
 				item.getChild('n9').text = user.nickname;
 				item.getChild('n10').text = user.coins;
@@ -13146,7 +13151,9 @@
 		AccountWin: AccountWin,
 		SetFaceWin: SetFaceWin,
 		SetNameWin: SetNameWin,
-		SetPwdWin: SetPwdWin
+		SetPwdWin: SetPwdWin,
+		RestPlayersWin: RestPlayersWin,
+		PersonHisWin: PersonHisWin
 	};
 	module.exports = wins;
 
