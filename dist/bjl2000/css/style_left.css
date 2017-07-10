@@ -1,0 +1,24 @@
+body,td,th,ul,li,p {font-size: 12px;color: #545454; list-style:none; line-height:22px;margin: 0px;padding:0px;}
+
+*{margin:0;padding:0;}
+.crl{clear:both;margin:0 auto;}
+
+.left{width:209px;float:left;padding-top:12px;}
+.login{ background:url(../images/xl/login_bg1.jpg) repeat-y; }
+.login a{color:#00b7ec; text-decoration:none;}
+.login a:hover{color:#ec4e00; text-decoration:underline;}
+.onput{ border:#9fe1f2 1px solid;width:126px;height:18px;}
+.left2{width:204px;padding-left:3px;}
+.left2bg{ background:url(../images/xl/left_bg1.jpg) repeat-y;}
+.left2bg a{color:#545454;text-decoration:none;}
+.left2bg a:hover{color:#333; text-decoration:underline;}
+.left2bg ul{padding-left:38px;padding-top:10px;padding-bottom:13px;}
+.left2bg ul p{padding-right:5px;float:left;}
+.leftcon{padding-left:16px;padding-top:10px;padding-bottom:5px;}
+.leftcon ul{padding:0px;margin:0px;}
+.leftcon li{height:33px;}
+.leftcon p{padding-right:6px;}
+.bottom{background:url(../images/xl/bottom_bg1.jpg) repeat-x;height:100px; text-align:center;padding-top:50px;width:100%; background-position:top;}
+.main{width:998px;margin:0 auto;}
+
+
