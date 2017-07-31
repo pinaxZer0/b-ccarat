@@ -12,7 +12,7 @@ var conf={room:{}};
 
 // 此处修改修改成你的内容
 var default_user={
-	coins:0, savedMoney:0, level:1, face:'ui://6f69ijynsmakpw', tickets:1, friends:[]
+	coins:1000, savedMoney:0, level:1, face:'ui://vb2dadv6l8vr7r', tickets:1, friends:[]
 };
 
 function getDbuser(userid, proj, cb) {
@@ -86,10 +86,11 @@ class Interact extends EventEmitter {
 class User extends EventEmitter {
 	constructor(ws, dbuser) {
 		super();
-		this.__ob=true;
+		// this.__ob=true;
 		this.dbuser=dbuser;
 		this.table=null;
 		this.ws=ws;
+		this.ws.__ob=true;
 		dbuser.loginTime=dbuser.timelygift_taken_time=new Date();
 		this.exp=this.exp;
 
@@ -120,6 +121,8 @@ class User extends EventEmitter {
 			cb=proj;
 			proj=null;
 		}
+		id=Number(id);
+		if (isNaN(id)) cb('param error');
 		getDB(function(err, db, easym) {
 			db.users.find({showId:id}, {_id:true}).limit(1).next(function (err, user) {
 				if (err) return cb(err);
@@ -127,6 +130,19 @@ class User extends EventEmitter {
 				return User.fromID(user._id, proj, cb);
 			});
 		})
+	}
+	static fromNickname(nick, proj, cb) {
+		if (typeof proj==='function') {
+			cb=proj;
+			proj=null;
+		}
+		getDB(function(err, db, easym) {
+			db.users.find({nickname:nick}, {_id:true}).limit(1).next(function (err, user) {
+				if (err) return cb(err);
+				if (!user) return cb('no such user');
+				return User.fromID(user._id, proj, cb);
+			});
+		})		
 	}
 
 	fixlevel() {
@@ -160,6 +176,11 @@ class User extends EventEmitter {
 		this.offline=true;
 		this.emit('out', this);
 	}
+	/**
+	 * 
+	 * @param {*} cmd 
+	 * @param {*} timeoutOrOpt 
+	 */
 	createInteract(cmd, timeoutOrOpt) {
 		return new Interact(this, timeoutOrOpt).serverAct(cmd);
 	}
@@ -254,12 +275,12 @@ class User extends EventEmitter {
 		this.send({user:{table:tbl.code}});
 	}
 	get showId() {
-		return this._showId;
+		return this.dbuser.showId;
 	}
-	set showId(n) {
-		this._showId=n;
-		this.send({user:{showId:n}});
-	}
+	// set showId(n) {
+	// 	this.dbuser.showId=n;
+	// 	this.send({user:{showId:n}});
+	// }
 	get mailCount() {
 		return this._mailCount||0;
 	}
@@ -627,17 +648,22 @@ class User extends EventEmitter {
 				});
 			break;
 			case 'safe.deposit':
+				if (isNaN(pack.coins)) return self.senderr('参数有误');
+				pack.coins=Number(pack.coins);
 				if (self.coins<pack.coins) return self.senderr('现金不足');
 				self.savedMoney+=pack.coins;
 				self.coins-=pack.coins;
 			break;
 			case 'safe.withdraw':
+				if (isNaN(pack.coins)) return self.senderr('参数有误');
+				pack.coins=Number(pack.coins);
 				if (self.savedMoney<pack.coins) return self.senderr('保险箱中没有那么多资金');
 				self.savedMoney-=pack.coins;
 				self.coins+=pack.coins;
 			break;
 			case 'verifypwd':
-				if (pack.pwd==this.dbuser.pwd) return self.send({c:'verifypwd.ok'});
+				if (pack.pwd==this.dbuser.pwd) return self.send({c:'verifypwd', isOk:true});
+				else return self.send({c:'verifypwd', isOk:false});
 				self.senderr('密码错误');
 			break;
 			case 'set':
@@ -666,6 +692,125 @@ class User extends EventEmitter {
 						self.send({c:'personhis', data:r});
 					});
 				})
+			break;
+			case 'coins.transfer':
+				//chk pwd
+				if (!pack.pwd) return this.senderr('参数有误');
+				if (pack.pwd!=this.dbuser.secpwd) return this.senderr('密码不正确');
+				if (isNaN(pack.coins)) return self.senderr('参数有误');
+				pack.coins=Number(pack.coins);
+				if (pack.coins<=0) return self.senderr('金豆数量不对');
+				if (pack.coins>this.coins) return this.senderr('没有足够的金豆');
+				if (pack.target==this.showId) return this.senderr('不能转给自己');
+				User.fromShowID(pack.target, function(err, usr) {
+					if (err) return self.senderr(err);
+					self.coins-=pack.coins;
+					usr.coins+=pack.coins;
+				});
+			break;
+			case 'user.setnickname':
+				if (pack.nickname) this.nickname=pack.nickname;
+			break;
+			case 'user.setface':
+				if (pack.face) this.face=pack.face;
+			break;
+			case 'user.secpwd.set':
+				if (!pack.pwd) return this.senderr('参数有误');
+				if (this.dbuser.secpwd!=null) return this.senderr('不能设置保险箱密码');
+				this.dbuser.secpwd=pack.pwd;
+				this.send({user:{hasSecpwd:true}});
+			break;
+			case 'user.secpwd.verify':
+				if (!pack.pwd) return this.send({c:'user.secpwd.verify', err:'参数有误'});
+				if (pack.pwd==this.dbuser.secpwd) return this.send({c:'user.secpwd.verify', result:'ok'});
+				else return this.send({c:'user.secpwd.verify', err:'密码不符'});
+			break;
+			case 'user.pwdpro.set':
+				if (!pack.q) return this.senderr('参数有误');
+				if (this.dbuser.pwdpro) {
+					// sec verfy
+					if (pack.qid==null || pack.ans==null) return this.senderr('参数有误');
+					var q=this.dbuser.pwdpro[pack.qid];
+					if (!q) return this.senderr('无法验证的问题');
+					if (q.ans!=pack.ans) return this.senderr('答案不符');
+				}
+				this.dbuser.pwdpro=pack.q;
+			break;
+			case 'user.pwdpro.queryquestion':
+				if (!this.dbuser.pwdpro) return this.send({c:'user.pwdpro.queryquestion', err:{message:'没有设置密保问题', win:'SetSecPwdWin'}});
+				var qid=Math.floor(Math.random()*this.dbuser.pwdpro.length);
+				this.send({c:'user.pwdpro.queryquestion', qid:qid, q:this.dbuser.pwdpro[qid].q});
+			break;
+			case 'user.pwdpro.verify':
+				if (pack.qid==null || pack.ans==null) return this.senderr('参数有误');
+				var q=this.dbuser.pwdpro[pack.qid];
+				if (!q) return this.senderr('无法验证的问题');
+				if (q.ans==pack.ans) return this.send({c:'user.pwdpro.verify', result:'ok'});
+				this.send({c:'user.pwdpro.verify', result:'答案不符'});
+			break;
+			case 'user.pwdpro.setpwd':
+				if (pack.qid==null || pack.ans==null) return this.senderr('参数有误');
+				var q=this.dbuser.pwdpro[pack.qid];
+				if (!q) return this.senderr('无法验证的问题');
+				if (q.ans!=pack.ans) return this.senderr('答案不符');
+				this.dbuser.pwd=pack.pwd;
+			break;
+			case 'userInfo':
+				if (pack.id) return User.fromShowID(pack.id, {nickname:true, face:true, coins:true, showId:true, block:true, nochat:true}, function(err, user) {
+					if (err) return self.senderr(err);
+					self.send({c:'userInfo', id:user.id, nickname:user.nickname, face:user.face, coins:user.coins, showId:user.showId, block:user.dbuser.block, nochat:user.dbuser.nochat});
+				});
+				if (pack.nickname) return User.fromNickname(pack.nickname, {nickname:true, face:true, coins:true, showId:true, block:true, nochat:true}, function(err, user) {
+					if (err) return self.senderr(err);
+					self.send({c:'userInfo', id:user.id, nickname:user.nickname, face:user.face, coins:user.coins, showId:user.showId, block:user.dbuser.block, nochat:user.dbuser.nochat});
+				});
+				self.senderr('必须制定id或者nickname');
+			break;
+			case 'admin.addcoins':
+				if (!self.dbuser.isAdmin) return self.senderr('无权限');
+				if (pack.userid==null || !pack.coins) return self.senderr('参数错误');
+				User.fromID(pack.userid, {coins:true}, function(err, user) {
+					if (err) return self.senderr(err);
+					getDB(function(err, db, easym) {
+						if (err) return self.senderr(err);
+						user.coins+=pack.coins;
+						db.adminlog.insert({time:new Date(), target:user.id, targetName:user.nickname, coins:pack.coins, operatorName:self.nickname, operator:self.id});
+					});
+				});
+			break;
+			case 'admin.block':
+				if (!self.dbuser.isAdmin) return self.senderr('无权限');
+				if (pack.userid==null || pack.t==null || isNaN(Number(pack.t))) return self.senderr('参数错误');
+				User.fromID(pack.userid, {block:true}, function(err, user) {
+					if (err) return self.senderr(err);
+					if (pack.t) {
+						user.dbuser.block=new Date(new Date().getTime()+pack.t);
+						if (user.ws && user.ws.close) {
+							user.ws.close();
+						}
+					} else user.dbuser.block=new Date(0);
+				});
+			break;
+			case 'admin.nochat':
+				if (!self.dbuser.isAdmin) return self.senderr('无权限');
+				if (pack.userid==null || pack.t==null || isNaN(Number(pack.t))) return self.senderr('参数错误');
+				User.fromID(pack.userid, {nochat:true}, function(err, user) {
+					if (err) return self.senderr(err);
+					user.dbuser.nochat=pack.t?new Date(new Date().getTime()+pack.t):new Date(0);
+				});
+			break;
+			case 'admin.addCoinsLog':
+				if (!self.dbuser.isAdmin) return self.senderr('无权限');
+				if (!pack.start||!pack.end) return self.senderr('参数错误');
+				var start=new Date(pack.start), end=new Date(pack.end);
+				if (start=='Invalid Date' || end=='Invalid Date') return self.senderr('参数错误');
+				getDB(function(err, db, easym) {
+					if (err) return self.senderr(err);
+					db.adminlog.find({time:{$gt:start, $lte:end}}).toArray(function(err, r) {
+						if (err) return self.senderr(err);
+						self.send({c:'admin.addCoinsLog', logs:r});
+					});
+				});
 			break;
 			default:
 				var isprocessed=this.emit(pack.c, pack, this);

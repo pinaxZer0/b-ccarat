@@ -84,23 +84,22 @@ function all(showAdminData) {
 function init_tables() {
 	getDB(function(err, db) {
 		function innerServer() {
-			for (var i=0; i<3; i++) {
-				availble('baijiale', {minZhu:10, maxZhu:7500});
-			}
-			for (var i=0; i<1; i++) {
-				availble('baijiale', {minZhu:100, maxZhu:15000, minDui:10, maxDui:1500, maxHe:1900});
-			}
-			for (var i=0; i<3; i++) {
-				availble('baijiale', {minZhu:500, maxZhu:75000, minDui:50, maxDui:7500, maxHe:9500});
-			}
-			for (var i=0; i<1; i++) {
-				availble('baijiale', {minZhu:1000, maxZhu:150000, minDui:100, maxDui:15000, maxHe:18500});
-			}
-			var o=[];
+			availble('baijiale', {minZhu:100, maxZhu:200000, minDui:100, maxDui:20000, maxHe:25000});
+			// for (var i=0; i<1; i++) {
+			// 	availble('baijiale', {minZhu:100, maxZhu:15000, minDui:10, maxDui:1500, maxHe:1900});
+			// }
+			// for (var i=0; i<3; i++) {
+			// 	availble('baijiale', {minZhu:500, maxZhu:75000, minDui:50, maxDui:7500, maxHe:9500});
+			// }
+			// for (var i=0; i<1; i++) {
+			// 	availble('baijiale', {minZhu:1000, maxZhu:150000, minDui:100, maxDui:15000, maxHe:18500});
+			// }
+			var o=[], idx=0;
 			for (var t in _tables) {
 				for (var c in _tables[t]) {
 					var tbl=_tables[t][c];
-					o.push({_id:tbl.roomid, minZhu:tbl.opt.minZhu, maxZhu:tbl.opt.maxZhu, minDui:tbl.opt.minDui, maxDui:tbl.opt.maxDui, maxHe:tbl.opt.maxHe});
+					o.push({_id:tbl.roomid, minZhu:tbl.opt.minZhu, maxZhu:tbl.opt.maxZhu, minDui:tbl.opt.minDui, maxDui:tbl.opt.maxDui, maxHe:tbl.opt.maxHe, order:idx});
+					idx++;
 				}
 			}
 			db.servers.insertMany(o);

@@ -47,7 +47,7 @@
 
 	'use strict';
 
-	var back = __webpack_require__(213);
+	var back = __webpack_require__(260);
 	var splash = window.splash = $('<div/>');
 	splash.width($(window).width());
 	splash.height($(window).height());
@@ -86,10 +86,10 @@
 
 /***/ },
 
-/***/ 213:
+/***/ 260:
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__.p + "company.jpg?0e60234108358020b5a5e53acdd2a2e6";
+	module.exports = __webpack_require__.p + "company.jpg?dc7343d4519459a6151e805f84d6471f";
 
 /***/ }
 

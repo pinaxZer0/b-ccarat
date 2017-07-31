@@ -73,7 +73,7 @@
 /******/ 			script.charset = 'utf-8';
 /******/ 			script.async = true;
 
-/******/ 			script.src = __webpack_require__.p + "" + chunkId + "." + ({"1":"default","2":"wechat"}[chunkId]||chunkId) + ".js?" + {"1":"9bad11715efd39e60cbe","2":"61b2d654cbb835457179","3":"2855913ece9de6451d4e","4":"311cb36e35f1faf3cb73","5":"9e4b8daa7350108a95a6","6":"39db93f809209e257d95"}[chunkId] + "";
+/******/ 			script.src = __webpack_require__.p + "" + chunkId + "." + ({"1":"default","2":"inapp","3":"wechat"}[chunkId]||chunkId) + ".js?" + {"1":"9bad11715efd39e60cbe","2":"d713b4fc21405aa4d987","3":"320d1257b8d5788f8d27","4":"1b384051debfa261ec1d","5":"dd264acc2dd1c7e44645","6":"4801fbff758e1caa7355","7":"5e7b22fb431b87be265b"}[chunkId] + "";
 /******/ 			head.appendChild(script);
 /******/ 		}
 /******/ 	};
@@ -178,19 +178,18 @@
 
 		var url_option = url.parse(location.href, true),
 		    startup_param = startup_param ? merge(url_option.query, startup_param) : url_option.query;
-		if (startup_param.login == null && startup_param.reg == null && startup_param.id == null) {
-			var p = localStorage.getItem('id');
-			if (p) {
-				try {
-					p = JSON.parse(p);
-				} catch (e) {
-					p = null;
-				}
-				if (p) {
-					startup_param = merge(p, startup_param);
-				}
-			}
-		}var retrytimes = 0;
+		// if (startup_param.login==null && startup_param.reg==null && startup_param.id==null) {
+		// var p=localStorage.getItem('id');
+		// if (p) {
+		// 	try {
+		// 		p=JSON.parse(p);
+		// 	} catch(e) {p=null;}
+		// 	if (p) {
+		// 		startup_param=merge(p, startup_param);
+		// 	}
+		// }
+		// }
+		var retrytimes = 0;
 		// 找出服务器。支持一下方式
 		// 直接从网站访问 h5.1357g.com/xxx/
 		// 或者从参数制定服务器 file://xxx/index.html?server=[http://]h5.1357g.com/wnn/
@@ -296,40 +295,50 @@
 			if (startup_param.pf) {
 				var pf = __webpack_require__(24)("./" + startup_param.pf + '.js');
 			} else var pf = __webpack_require__(25); //$.getScript('pf/default.js');
-			pf(function () {});
-		} else startup_param.inApp = true;
+		} else {
+			startup_param.inApp = true;
+			var pf = __webpack_require__(28);
+		}
+		pf && pf(function () {});
 
 		if (startup_param.login) {
-			startup_param.c = 'login';startup_param.id = startup_param.login;
+			startup_param.c = 'rol';startup_param.id = startup_param.login;
 		}
 		if (startup_param.reg) {
 			startup_param.c = 'rol';startup_param.id = startup_param.reg;
 		}
 		if (startup_param.id) {
-			localStorage.setItem('id', JSON.stringify(startup_param));
+			var stored = {};
+			try {
+				stored = JSON.parse(localStorage.getItem('id'));
+			} catch (e) {
+				stored = {};
+			}
+			localStorage.setItem('id', JSON.stringify(merge(stored, startup_param)));
 		}
 		// if (!startup_param.notshowlogin && (startup_param.id || !!window.cordova ||startup_param.debug)) {
 		if (!startup_param.notshowlogin) {
 			if (startup_param.c == null) {
 				startup_param.c = 'rol';
 			}
-			return __webpack_require__.e/* require */(3, function(__webpack_require__) { var __WEBPACK_AMD_REQUIRE_ARRAY__ = [__webpack_require__(105), __webpack_require__(106), __webpack_require__(107)]; (function () {
-				__webpack_require__.e/* require */(4, function(__webpack_require__) { var __WEBPACK_AMD_REQUIRE_ARRAY__ = [__webpack_require__(108), __webpack_require__(109) /*, 'imports?this=>window!./libs/annieCore.js'*/]; (function (l, lh, r, f, annie) {
+			return __webpack_require__.e/* require */(4, function(__webpack_require__) { var __WEBPACK_AMD_REQUIRE_ARRAY__ = [__webpack_require__(107), __webpack_require__(108), __webpack_require__(109)]; (function () {
+				__webpack_require__.e/* require */(5, function(__webpack_require__) { var __WEBPACK_AMD_REQUIRE_ARRAY__ = [__webpack_require__(110), __webpack_require__(111) /*, 'imports?this=>window!./libs/annieCore.js'*/]; (function (l, lh, r, f, annie) {
 					var Loader = laya.net.Loader;
 					var Handler = laya.utils.Handler;
 
-					var orient = 'vertical';
+					var orient = 'horizon';
 					// Laya.Config.preserveDrawingBuffer=true;
-					var dw = Laya.Browser.width,
+					if (startup_param.inApp) var dw = window.screen.width,
+					    dh = window.screen.height;else var dw = Laya.Browser.width,
 					    dh = Laya.Browser.height;
 					var dr = dw / dh;
 
-					var idealW = 540,
-					    idealH = 960;
+					var idealW = 960,
+					    idealH = 540;
 					var idealR = idealW / idealH;
 
 					var pw, ph;
-					if (orient = 'vertical') {
+					if (orient == 'vertical') {
 						if (dr < 1) {
 							// 屏幕是竖的
 							if (dr < idealR) {
@@ -351,7 +360,7 @@
 							}
 						}
 					} else {
-						orient = 'horizon';
+						orient = 'horizontal';
 						if (dr < 1) {
 							// 屏幕是竖的
 							if (1 / dr < idealR) {
@@ -372,9 +381,22 @@
 							}
 						}
 					}
-					Laya.init(pw, ph, laya.webgl.WebGL);
-					Laya.SoundManager.musicMuted = localStorage.getItem('bgm') == 'true';
-					Laya.SoundManager.soundMuted = localStorage.getItem('snd') == 'true';
+					// Laya.init(pw, ph, laya.webgl.WebGL);
+					Laya.init(1280, 720, laya.webgl.WebGL);
+					Laya.SoundManager.musicMuted = localStorage.getItem('bgm') != 'true';
+					Laya.SoundManager.soundMuted = localStorage.getItem('snd') != 'true';
+					var bv = localStorage.getItem('bgmvol');
+					if (bv) {
+						bv = Number(bv);
+						if (isNaN(bv)) bv = 100;
+						Laya.SoundManager.musicVolume = bv / 100;
+					}
+					var sv = localStorage.getItem('sndvol');
+					if (sv) {
+						bv = Number(sv);
+						if (isNaN(sv)) sv = 100;
+						Laya.SoundManager.soundVolume = sv / 100;
+					}
 
 					// 调整stage.render
 					// var oldf=Laya.stage.render;
@@ -385,7 +407,7 @@
 					//laya.utils.Stat.show(0, 0);
 					//设置适配模式
 					// Laya.stage.bgColor=null;
-					Laya.stage.scaleMode = "showall";
+					Laya.stage.scaleMode = dw >= 1280 && dh >= 720 ? "noscale" : "showall";
 					Laya.stage.alignH = "center";
 					Laya.stage.alignV = "center";
 					//设置横竖屏
@@ -442,25 +464,25 @@
 						}, {
 							key: 'onAddedToStage',
 							value: function onAddedToStage() {
-								this.x = (540 - this.initWidth) / 2;
-								this.y = (960 - this.initHeight) / 2;
+								this.x = (Laya.stage.width - this.initWidth) / 2;
+								this.y = (Laya.stage.height - this.initHeight) / 2;
 							}
 						}]);
 
 						return GlobalWaiting;
 					}(fairygui.GComponent);
 
-					var ui = __webpack_require__(110);
+					var ui = __webpack_require__(112);
 
 					// for debug
 					window.ui = ui;
 
-					var wins = __webpack_require__(31);
+					var wins = __webpack_require__(33);
 					var tipon = global.tipon = function (str, opt) {
 						return new wins.TipWin(str, opt);
 					};
 					// finally ,open connect
-					Laya.loader.load([{ url: __webpack_require__(112), type: laya.net.Loader.IMAGE }, { url: __webpack_require__(153), type: laya.net.Loader.IMAGE }, { url: __webpack_require__(114), type: laya.net.Loader.BUFFER }], Handler.create(null, function () {
+					Laya.loader.load([{ url: __webpack_require__(115), type: laya.net.Loader.IMAGE }, { url: __webpack_require__(117), type: laya.net.Loader.BUFFER }], Handler.create(null, function () {
 						if (window['splash']) {
 							//Laya.stage.removeChild(splash);
 							$('body').css('background-color', '#000');
@@ -468,7 +490,7 @@
 							window['splash'] = null;
 						}
 						Laya.stage.bgColor = '#000';
-						fairygui.UIPackage.addPackage('baccarat');
+						fairygui.UIPackage.addPackage('baijiale');
 						fairygui.UIConfig.globalModalWaiting = fairygui.UIPackage.getItemURL("Package1", "loading");
 						fairygui.UIObjectFactory.setPackageItemExtension(fairygui.UIPackage.getItemURL("Package1", "loading"), GlobalWaiting);
 					}));
@@ -563,7 +585,7 @@
 				} catch (e) {
 					return console.log(e, msg.data);
 				}
-				console.log('recv', msg);
+				// console.log('recv', msg);
 				if (pack.seq) msgloop.push(pack);else this.msg(pack);
 			};
 			var _firstsetme = true;
@@ -581,10 +603,11 @@
 					console.log('err', pack.err);
 					pack.cancelRelogin && (socket.cancelRelogin = true);
 
-					var wins = __webpack_require__(31);
+					var wins = __webpack_require__(33);
 					if (pack.err.win && wins[pack.err.win]) {
 						tipon(errmsg(pack.err), Handler.create(null, function () {
 							var win = new wins[pack.err.win]();
+							win.modal = true;
 							win.show();
 						})).popup();
 					} else if (pack.err.view) {
@@ -595,6 +618,7 @@
 					return;
 				}
 				if (pack.user) {
+					console.log(pack);
 					me._update(pack.user);
 				}
 				switch (pack.c) {
@@ -11404,7 +11428,8 @@
 
 	var map = {
 		"./default.js": 25,
-		"./wechat.js": 28
+		"./inapp.js": 28,
+		"./wechat.js": 30
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -11462,8 +11487,28 @@
 
 /***/ },
 /* 29 */,
-/* 30 */,
-/* 31 */
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var cbs = [], 
+		data;
+	module.exports = function(cb) {
+		if(cbs) cbs.push(cb);
+		else cb(data);
+	}
+	__webpack_require__.e/* nsure */(3, function(require) {
+		data = __webpack_require__(31);
+		var callbacks = cbs;
+		cbs = null;
+		for(var i = 0, l = callbacks.length; i < l; i++) {
+			callbacks[i](data);
+		}
+	});
+
+/***/ },
+/* 31 */,
+/* 32 */,
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -11483,8 +11528,8 @@
 	var Loader = laya.net.Loader;
 	var Handler = laya.utils.Handler;
 	var me = __webpack_require__(22);
-	var printf = __webpack_require__(32);
-	var __ = __webpack_require__(57),
+	var printf = __webpack_require__(34);
+	var __ = __webpack_require__(59),
 	    toDateString = __.toDateString,
 	    _noop = __._noop;
 
@@ -11549,8 +11594,9 @@
 
 				this.initBtns();
 				this.assignAllBtns();
-				if (this.contentPane.width == 540) this.width = Laya.stage.width;
-				if (this.contentPane.height == 960) this.height = Laya.stage.height;
+				var fullScreenInd = [540, 720, 960, 1280];
+				if (fullScreenInd.indexOf(this.contentPane.width) >= 0) this.width = Laya.stage.width;
+				if (fullScreenInd.indexOf(this.contentPane.height) >= 0) this.height = Laya.stage.height;
 
 				this.center();
 
@@ -11659,8 +11705,231 @@
 		return Win;
 	}(fairygui.Window);
 
-	var BankWin = function (_Win) {
-		_inherits(BankWin, _Win);
+	var SetSecPwdWin = function (_Win) {
+		_inherits(SetSecPwdWin, _Win);
+
+		function SetSecPwdWin(myid) {
+			_classCallCheck(this, SetSecPwdWin);
+
+			var _this3 = _possibleConstructorReturn(this, (SetSecPwdWin.__proto__ || Object.getPrototypeOf(SetSecPwdWin)).call(this, 'setSecPwd'));
+
+			_this3._myid = myid || me.id;
+			return _this3;
+		}
+
+		_createClass(SetSecPwdWin, [{
+			key: 'onInit',
+			value: function onInit() {
+				_get(SetSecPwdWin.prototype.__proto__ || Object.getPrototypeOf(SetSecPwdWin.prototype), 'onInit', this).call(this);
+				var cont = this.contentPane,
+				    self = this;
+				cont.getChild('n90').onClick(null, function () {
+					var secpwd = cont.getChild('n75').text,
+					    pq1 = cont.getChild('n78').text,
+					    pa1 = cont.getChild('n81').text,
+					    pq2 = cont.getChild('n84').text,
+					    pa2 = cont.getChild('n87').text;
+					if (!secpwd) {
+						cont.getChild('n75').text = '';cont.getChild('n75').displayObject.prompt = '请输入保险箱密码';cont.getTransition('t0').play();return;
+					}
+					if (!pq1) {
+						cont.getChild('n78').text = '';cont.getChild('n78').displayObject.prompt = '请输入密保问题';cont.getTransition('t1').play();return;
+					}
+					if (!pa1) {
+						cont.getChild('n81').text = '';cont.getChild('n81').displayObject.prompt = '请输入密保答案';cont.getTransition('t2').play();return;
+					}
+					if (!pq2) {
+						cont.getChild('n84').text = '';cont.getChild('n84').displayObject.prompt = '请输入密保问题';cont.getTransition('t3').play();return;
+					}
+					if (!pa2) {
+						cont.getChild('n87').text = '';cont.getChild('n87').displayObject.prompt = '请输入密保答案';cont.getTransition('t4').play();return;
+					}
+
+					getAjax('/pf/bacc.hori/user.secpwd.set', { userid: self._myid, pwd: secpwd });
+					getAjax('/pf/bacc.hori/user.pwdpro.set', { userid: self._myid, q: [{ q: pq1, ans: pa1 }, { q: pq2, ans: pa2 }] });
+					self.hide();
+				});
+			}
+		}]);
+
+		return SetSecPwdWin;
+	}(Win);
+
+	var VerifyPwdProtectWin = function (_Win2) {
+		_inherits(VerifyPwdProtectWin, _Win2);
+
+		function VerifyPwdProtectWin(myid, onOk, onCancel) {
+			_classCallCheck(this, VerifyPwdProtectWin);
+
+			var _this4 = _possibleConstructorReturn(this, (VerifyPwdProtectWin.__proto__ || Object.getPrototypeOf(VerifyPwdProtectWin)).call(this, 'verifyPwdProtect'));
+
+			_this4._myid = myid;
+			_this4.onOk = onOk || _noop;
+			_this4.onCancel = onCancel || _noop;
+			return _this4;
+		}
+
+		_createClass(VerifyPwdProtectWin, [{
+			key: 'onInit',
+			value: function onInit() {
+				_get(VerifyPwdProtectWin.prototype.__proto__ || Object.getPrototypeOf(VerifyPwdProtectWin.prototype), 'onInit', this).call(this);
+				var cont = this.contentPane,
+				    self = this;
+				fairygui.GRoot.inst.showModalWait();
+				getAjax('/pf/bacc.hori/user.pwdpro.queryquestion', { userid: this._myid }, function (err, r) {
+					fairygui.GRoot.inst.closeModalWait();
+					if (err) return tipon(err).popup();
+					if (r.err) {
+						self.hide();
+						if (r.win) return tipon(r.err, Handler.create(null, function () {
+							var win = new wins[r.win]();
+							win.modal = true;
+							win.show();
+						})).popup();
+						return tipon(err || r.err).popup();
+					}
+					cont.getChild('n78').text = r.q;
+					cont.getChild('n90').onClick(null, function () {
+						var pq1 = cont.getChild('n78').text,
+						    pa1 = cont.getChild('n81').text;
+						if (!pa1) {
+							cont.getChild('n81').text = '';cont.getChild('n81').displayObject.prompt = '请输入密保答案';cont.getTransition('t0').play();
+						}
+
+						getAjax('/pf/bacc.hori/user.pwdpro.verify', { userid: me.id, qid: r.qid, ans: pa1 }, function (err) {
+							if (err) return tipon(err).popup();
+							if (r.err) {
+								cont.getChild('n81').text = '';cont.getChild('n81').displayObject.prompt = '密保答案有误';cont.getTransition('t0').play();
+							} else {
+								self.hide();
+								self.onOk(r.qid, pa1);
+							}
+						});
+					});
+				});
+			}
+		}]);
+
+		return VerifyPwdProtectWin;
+	}(Win);
+
+	var MyCreditsWin = function (_Win3) {
+		_inherits(MyCreditsWin, _Win3);
+
+		function MyCreditsWin() {
+			_classCallCheck(this, MyCreditsWin);
+
+			return _possibleConstructorReturn(this, (MyCreditsWin.__proto__ || Object.getPrototypeOf(MyCreditsWin)).call(this, 'myCredits'));
+		}
+
+		_createClass(MyCreditsWin, [{
+			key: 'onInit',
+			value: function onInit() {
+				_get(MyCreditsWin.prototype.__proto__ || Object.getPrototypeOf(MyCreditsWin.prototype), 'onInit', this).call(this);
+				if (!me.hasSecpwd) {
+					tipon('请先设置保险箱密码以及密保问题', Handler.create(this, function () {
+						var ss = new SetSecPwdWin();
+						ss.modal = true;
+						ss.show();
+					})).popup();
+					return this.hide();
+				}
+				var self = this;
+				this._h = {
+					coinschgd: function coinschgd() {
+						self.contentPane.getChild('n10jindou').text = me.coins || 0;
+					},
+					bankchgd: function bankchgd() {
+						self.contentPane.getChild('n11jinku').text = me.savedMoney || 0;
+					}
+				};
+				me.on('coinschgd', this._h.coinschgd);
+				me.on('bankchgd', this._h.bankchgd);
+
+				var ctrl = this.contentPane.getController('c1');
+				this.contentPane.getChild('n34').onClick(null, function () {
+					switch (ctrl.selectedIndex) {
+						case 0:
+							// 存入
+							var money = self.contentPane.getChild('n11jindou1').text;
+							var pwd = self.contentPane.getChild('n461').text;
+							self.verifyPwd(pwd, function (err) {
+								if (err) return tipon(err).popup();
+								if (isNaN(money)) return tipon('输入错误').popup();
+								if (money > me.coins) return tipon('没有那么多钱可存').popup();
+								_socket.sendp({ c: 'safe.deposit', coins: money });
+								self.hide();
+							});
+							break;
+						case 1:
+							// 	取出
+							var money = self.contentPane.getChild('n11jindou2').text;
+							var pwd = self.contentPane.getChild('n462').text;
+							self.verifyPwd(pwd, function (err) {
+								if (err) return;
+								if (isNaN(money)) return tipon('输入金额错误').popup();
+								if (money > me.savedMoney) return tipon('没有那么多钱可取').popup();
+								_socket.sendp({ c: 'safe.withdraw', coins: money });
+								self.hide();
+							});
+							break;
+						case 2:
+							// 赠送
+							var money = self.contentPane.getChild('n11jindou3').text;
+							var pwd = self.contentPane.getChild('n463').text;
+							var target = Number(self.contentPane.getChild('n464').text);
+							self.verifyPwd(pwd, function (err) {
+								if (err) return;
+								if (isNaN(money)) return tipon('输入金额错误').popup();
+								if (money > me.coins) return tipon('没有那么多钱可送').popup();
+								if (isNaN(target)) return tipon('接受ID输入有误').popup();
+								_socket.sendp({ c: 'userInfo', id: target });
+								netmsg.once('userInfo', null, function (pack) {
+									if (confirm(printf('请确认将%d金豆转给%s', money, pack.nickname))) _socket.sendp({ c: 'coins.transfer', pwd: pwd, coins: money, target: target });
+								});
+								self.hide();
+							});
+							break;
+					}
+				});
+
+				this.contentPane.getChild('n32').onClick(null, function () {
+					switch (ctrl.selectedIndex) {
+						case 0:
+							// 存入
+							self.contentPane.getChild('n11jindou1').text = me.coins || 0;
+							break;
+						case 1:
+							// 	取出
+							self.contentPane.getChild('n11jindou2').text = me.savedMoney || 0;
+							break;
+						case 2:
+							// 赠送
+							self.contentPane.getChild('n11jindou3').text = me.coins || 0;
+							break;
+					}
+				});
+				ctrl.on('fui_state_changed', null, function () {
+					['n461', 'n462', 'n463'].forEach(function (id) {
+						self.contentPane.getChild(id).text = '';
+					});
+				});
+			}
+		}, {
+			key: 'verifyPwd',
+			value: function verifyPwd(pwd, cb) {
+				_socket.sendp({ c: 'user.secpwd.verify', pwd: pwd });
+				netmsg.once('user.secpwd.verify', this, function (pack) {
+					cb(pack.err);
+				});
+			}
+		}]);
+
+		return MyCreditsWin;
+	}(Win);
+
+	var BankWin = function (_Win4) {
+		_inherits(BankWin, _Win4);
 
 		function BankWin() {
 			_classCallCheck(this, BankWin);
@@ -11690,8 +11959,81 @@
 		return BankWin;
 	}(Win);
 
-	var SafeWin = function (_Win2) {
-		_inherits(SafeWin, _Win2);
+	var UserInfoWin = function (_Win5) {
+		_inherits(UserInfoWin, _Win5);
+
+		function UserInfoWin() {
+			_classCallCheck(this, UserInfoWin);
+
+			return _possibleConstructorReturn(this, (UserInfoWin.__proto__ || Object.getPrototypeOf(UserInfoWin)).call(this, 'userInfo'));
+		}
+
+		_createClass(UserInfoWin, [{
+			key: 'onInit',
+			value: function onInit() {
+				_get(UserInfoWin.prototype.__proto__ || Object.getPrototypeOf(UserInfoWin.prototype), 'onInit', this).call(this);
+
+				var self = this;
+				this._h = {
+					facechgd: function facechgd() {
+						self.contentPane.getChild('n80').url = me.face;
+					},
+					nicknamechgd: function nicknamechgd() {
+						self.contentPane.getChild('n92').text = me.nickname || me.id;
+					},
+					idchgd: function idchgd() {
+						self.contentPane.getChild('n89').text = me.id;
+					},
+					showIdchgd: function showIdchgd() {
+						self.contentPane.getChild('n90').text = me.showId;
+					}
+				};
+				for (var e in this._h) {
+					me.on(e, this._h[e]);
+				}
+
+				this.contentPane.getChild('n74').onClick(null, function () {
+					var n = self.contentPane.getChild('n92').text;
+					if (!n) return tipon('昵称填写错误').popup();
+					_socket.sendp({ c: 'user.setnickname', nickname: n });
+				});
+
+				this.contentPane.getChild('n73').onClick(null, function () {
+					main({ showlogin: true });
+				});
+
+				var list = this.contentPane.getChild('n96');
+				list.on(fairygui.Events.CLICK_ITEM, null, function (item) {
+					var idx = list._children.indexOf(item);
+					if (idx < 0) return;
+					_socket.sendp({ c: 'user.setface', face: fairygui.UIPackage.getItemURL('Package1', '头像' + idx) });
+					self.contentPane.getChild('n80').url = fairygui.UIPackage.getItemURL('Package1', '头像' + idx);
+				});
+
+				this.contentPane.getChild('n84').onClick(null, function () {
+					list.scrollPane.setPosX(list.scrollPane.posX - 85, true);
+				});
+				this.contentPane.getChild('n85').onClick(null, function () {
+					list.scrollPane.setPosX(list.scrollPane.posX + 85, true);
+				});
+
+				this.contentPane.getChild('n97').onClick(null, function () {
+					var dlg = new wins.VerifyPwdProtectWin(me.id, function (qid, ans) {
+						var dlg2 = new wins.SetPwdWin(me.id, qid, ans);
+						dlg2.modal = true;
+						dlg2.show();
+					});
+					dlg.modal = true;
+					dlg.show();
+				});
+			}
+		}]);
+
+		return UserInfoWin;
+	}(Win);
+
+	var SafeWin = function (_Win6) {
+		_inherits(SafeWin, _Win6);
 
 		function SafeWin() {
 			_classCallCheck(this, SafeWin);
@@ -11740,17 +12082,17 @@
 		return SafeWin;
 	}(Win);
 
-	var VerifyPwdWin = function (_Win3) {
-		_inherits(VerifyPwdWin, _Win3);
+	var VerifyPwdWin = function (_Win7) {
+		_inherits(VerifyPwdWin, _Win7);
 
 		function VerifyPwdWin(onOk, onCancel) {
 			_classCallCheck(this, VerifyPwdWin);
 
-			var _this5 = _possibleConstructorReturn(this, (VerifyPwdWin.__proto__ || Object.getPrototypeOf(VerifyPwdWin)).call(this, '请输入密码'));
+			var _this9 = _possibleConstructorReturn(this, (VerifyPwdWin.__proto__ || Object.getPrototypeOf(VerifyPwdWin)).call(this, '请输入密码'));
 
-			_this5.onOk = onOk || _noop;
-			_this5.onCancel = onCancel || _noop;
-			return _this5;
+			_this9.onOk = onOk || _noop;
+			_this9.onCancel = onCancel || _noop;
+			return _this9;
 		}
 
 		_createClass(VerifyPwdWin, [{
@@ -11786,8 +12128,8 @@
 		return VerifyPwdWin;
 	}(Win);
 
-	var TakeMoneyWin = function (_Win4) {
-		_inherits(TakeMoneyWin, _Win4);
+	var TakeMoneyWin = function (_Win8) {
+		_inherits(TakeMoneyWin, _Win8);
 
 		function TakeMoneyWin() {
 			_classCallCheck(this, TakeMoneyWin);
@@ -11816,8 +12158,8 @@
 		return TakeMoneyWin;
 	}(Win);
 
-	var SaveMoneyWin = function (_Win5) {
-		_inherits(SaveMoneyWin, _Win5);
+	var SaveMoneyWin = function (_Win9) {
+		_inherits(SaveMoneyWin, _Win9);
 
 		function SaveMoneyWin() {
 			_classCallCheck(this, SaveMoneyWin);
@@ -11846,8 +12188,8 @@
 		return SaveMoneyWin;
 	}(Win);
 
-	var WithdrawWin = function (_Win6) {
-		_inherits(WithdrawWin, _Win6);
+	var WithdrawWin = function (_Win10) {
+		_inherits(WithdrawWin, _Win10);
 
 		function WithdrawWin() {
 			_classCallCheck(this, WithdrawWin);
@@ -11902,8 +12244,8 @@
 		return WithdrawWin;
 	}(Win);
 
-	var CashDetailWin = function (_Win7) {
-		_inherits(CashDetailWin, _Win7);
+	var CashDetailWin = function (_Win11) {
+		_inherits(CashDetailWin, _Win11);
 
 		function CashDetailWin() {
 			_classCallCheck(this, CashDetailWin);
@@ -11946,8 +12288,8 @@
 		return CashDetailWin;
 	}(Win);
 
-	var WithdrawListWin = function (_Win8) {
-		_inherits(WithdrawListWin, _Win8);
+	var WithdrawListWin = function (_Win12) {
+		_inherits(WithdrawListWin, _Win12);
 
 		function WithdrawListWin() {
 			_classCallCheck(this, WithdrawListWin);
@@ -11997,8 +12339,8 @@
 		return WithdrawListWin;
 	}(Win);
 
-	var ManRoomWin = function (_Win9) {
-		_inherits(ManRoomWin, _Win9);
+	var ManRoomWin = function (_Win13) {
+		_inherits(ManRoomWin, _Win13);
 
 		function ManRoomWin() {
 			_classCallCheck(this, ManRoomWin);
@@ -12128,7 +12470,7 @@
 		}
 		var params = winArr.slice();
 		params.unshift(['zhuang', 'xian', 'he', 'xianDui', 'zhuangDui']);
-		var _ = __webpack_require__(58);
+		var _ = __webpack_require__(60);
 		var loseArr = _.without.apply(_, params);
 		var factor = { xian: 1, zhuang: 0.95, xianDui: 11, zhuangDui: 11, he: 8 };
 		var win = 0;
@@ -12147,8 +12489,8 @@
 		return win;
 	}
 
-	var PersonHisWin = function (_Win10) {
-		_inherits(PersonHisWin, _Win10);
+	var PersonHisWin = function (_Win14) {
+		_inherits(PersonHisWin, _Win14);
 
 		function PersonHisWin() {
 			_classCallCheck(this, PersonHisWin);
@@ -12204,17 +12546,17 @@
 		return PersonHisWin;
 	}(Win);
 
-	var RestPlayersWin = function (_Win11) {
-		_inherits(RestPlayersWin, _Win11);
+	var RestPlayersWin = function (_Win15) {
+		_inherits(RestPlayersWin, _Win15);
 
 		function RestPlayersWin(gamedata) {
 			_classCallCheck(this, RestPlayersWin);
 
-			var _this13 = _possibleConstructorReturn(this, (RestPlayersWin.__proto__ || Object.getPrototypeOf(RestPlayersWin)).call(this, 'restPlayers'));
+			var _this17 = _possibleConstructorReturn(this, (RestPlayersWin.__proto__ || Object.getPrototypeOf(RestPlayersWin)).call(this, 'restPlayers'));
 
-			_this13.gamedata = gamedata;
-			_this13.users = Object.keys(gamedata.seats);
-			return _this13;
+			_this17.gamedata = gamedata;
+			_this17.users = Object.keys(gamedata.seats);
+			return _this17;
 		}
 
 		_createClass(RestPlayersWin, [{
@@ -12241,8 +12583,8 @@
 		return RestPlayersWin;
 	}(Win);
 
-	var RegisterWin = function (_Win12) {
-		_inherits(RegisterWin, _Win12);
+	var RegisterWin = function (_Win16) {
+		_inherits(RegisterWin, _Win16);
 
 		function RegisterWin() {
 			_classCallCheck(this, RegisterWin);
@@ -12254,27 +12596,32 @@
 			key: 'onInit',
 			value: function onInit() {
 				_get(RegisterWin.prototype.__proto__ || Object.getPrototypeOf(RegisterWin.prototype), 'onInit', this).call(this);
-				this.contentPane.getChild('n7').on('input', this, this.chkLoginBtnStatus);
-				this.contentPane.getChild('n9').on('input', this, this.chkLoginBtnStatus);
+				var self = this;
+				['n40', 'n41', 'n42', 'n43'].forEach(function (id) {
+					self.contentPane.getChild(id).on('input', self, self.chkLoginBtnStatus);
+				});
+				this.chkLoginBtnStatus();
 
-				this.contentPane.getChild('n15').onClick(this, function () {
-					main({ reg: this.contentPane.getChild('n7').text, pwd: this.contentPane.getChild('n9').text, face: fairygui.UIPackage.getItemURL('Package1', '头像' + Math.floor(Math.random() * 2 + 1)) });
+				this.contentPane.getChild('n13').onClick(this, function () {
+					main({ reg: this.contentPane.getChild('n40').text, nickname: this.contentPane.getChild('n43').text, pwd: this.contentPane.getChild('n41').text, face: fairygui.UIPackage.getItemURL('Package1', '头像' + Math.floor(Math.random() * 2 + 1)) });
 				});
 			}
 		}, {
 			key: 'chkLoginBtnStatus',
 			value: function chkLoginBtnStatus() {
-				var reg = /^1[0-9]{10}$/;
-				var name = this.contentPane.getChild('n7').text;
-				this.contentPane.getController('c1').selectedIndex = this.contentPane.getChild('n9').text.length > 0 && reg.test(name) ? 1 : 0;
+				var validateEmail = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+				var name = this.contentPane.getChild('n40').text;
+				var pwd = this.contentPane.getChild('n41').text,
+				    confirmPwd = this.contentPane.getChild('n42').text;
+				this.contentPane.getChild('n13').enabled = pwd && pwd == confirmPwd && validateEmail.test(name);
 			}
 		}]);
 
 		return RegisterWin;
 	}(Win);
 
-	var RechargeWin = function (_Win13) {
-		_inherits(RechargeWin, _Win13);
+	var RechargeWin = function (_Win17) {
+		_inherits(RechargeWin, _Win17);
 
 		function RechargeWin() {
 			_classCallCheck(this, RechargeWin);
@@ -12302,8 +12649,8 @@
 		return RechargeWin;
 	}(Win);
 
-	var BindCreditCardWin = function (_Win14) {
-		_inherits(BindCreditCardWin, _Win14);
+	var BindCreditCardWin = function (_Win18) {
+		_inherits(BindCreditCardWin, _Win18);
 
 		function BindCreditCardWin() {
 			_classCallCheck(this, BindCreditCardWin);
@@ -12323,7 +12670,7 @@
 					cardNum1.text = cardNum1.text.replace(/(\d{4})(?=\d)/g, "$1 ");
 				});
 
-				var cardBank = __webpack_require__(59);
+				var cardBank = __webpack_require__(61);
 				cardNum1.displayObject.on('blur', null, function () {
 					cardBank.getBankBin(cardNum1.text.replace(/\s/g, ''), function (err, info) {
 						if (err) return;
@@ -12358,8 +12705,8 @@
 		return BindCreditCardWin;
 	}(Win);
 
-	var BuyMonthlyWin = function (_Win15) {
-		_inherits(BuyMonthlyWin, _Win15);
+	var BuyMonthlyWin = function (_Win19) {
+		_inherits(BuyMonthlyWin, _Win19);
 
 		function BuyMonthlyWin() {
 			_classCallCheck(this, BuyMonthlyWin);
@@ -12385,8 +12732,8 @@
 		return BuyMonthlyWin;
 	}(Win);
 
-	var RankingWin = function (_Win16) {
-		_inherits(RankingWin, _Win16);
+	var RankingWin = function (_Win20) {
+		_inherits(RankingWin, _Win20);
 
 		function RankingWin() {
 			_classCallCheck(this, RankingWin);
@@ -12453,8 +12800,8 @@
 		return RankingWin;
 	}(Win);
 
-	var BuyWeeklyWin = function (_Win17) {
-		_inherits(BuyWeeklyWin, _Win17);
+	var BuyWeeklyWin = function (_Win21) {
+		_inherits(BuyWeeklyWin, _Win21);
 
 		function BuyWeeklyWin() {
 			_classCallCheck(this, BuyWeeklyWin);
@@ -12480,8 +12827,8 @@
 		return BuyWeeklyWin;
 	}(Win);
 
-	var BuyTicketsWin = function (_Win18) {
-		_inherits(BuyTicketsWin, _Win18);
+	var BuyTicketsWin = function (_Win22) {
+		_inherits(BuyTicketsWin, _Win22);
 
 		function BuyTicketsWin() {
 			_classCallCheck(this, BuyTicketsWin);
@@ -12542,8 +12889,8 @@
 		return BuyTicketsWin;
 	}(Win);
 
-	var BuyTicketsTempWin = function (_Win19) {
-		_inherits(BuyTicketsTempWin, _Win19);
+	var BuyTicketsTempWin = function (_Win23) {
+		_inherits(BuyTicketsTempWin, _Win23);
 
 		function BuyTicketsTempWin() {
 			_classCallCheck(this, BuyTicketsTempWin);
@@ -12575,21 +12922,21 @@
 		return BuyTicketsTempWin;
 	}(Win);
 
-	var TipWin = function (_Win20) {
-		_inherits(TipWin, _Win20);
+	var TipWin = function (_Win24) {
+		_inherits(TipWin, _Win24);
 
 		function TipWin(str, opt) {
 			_classCallCheck(this, TipWin);
 
-			var _this22 = _possibleConstructorReturn(this, (TipWin.__proto__ || Object.getPrototypeOf(TipWin)).call(this, 'TIP'));
+			var _this26 = _possibleConstructorReturn(this, (TipWin.__proto__ || Object.getPrototypeOf(TipWin)).call(this, 'TIP'));
 
-			if (typeof str == 'string') _this22._tip = str;else if (str instanceof Error) _this22._tip = str.message;
+			if (typeof str == 'string') _this26._tip = str;else if (str instanceof Error) _this26._tip = str.message;
 			if (opt) {
 				if (opt instanceof Handler) {
-					_this22._opt = { waitHandler: opt };
-				} else _this22._opt = opt;
-			} else _this22._opt = {};
-			return _this22;
+					_this26._opt = { waitHandler: opt };
+				} else _this26._opt = opt;
+			} else _this26._opt = {};
+			return _this26;
 		}
 
 		_createClass(TipWin, [{
@@ -12671,10 +13018,10 @@
 		function RecWin() {
 			_classCallCheck(this, RecWin);
 
-			var _this23 = _possibleConstructorReturn(this, (RecWin.__proto__ || Object.getPrototypeOf(RecWin)).call(this));
+			var _this27 = _possibleConstructorReturn(this, (RecWin.__proto__ || Object.getPrototypeOf(RecWin)).call(this));
 
-			_this23.comName = 'Component35';_this23.packageName = '牛牛';
-			return _this23;
+			_this27.comName = 'Component35';_this27.packageName = '牛牛';
+			return _this27;
 		}
 
 		_createClass(RecWin, [{
@@ -12699,8 +13046,8 @@
 		return RecWin;
 	}(fairygui.Window);
 
-	var CreateRoomWin = function (_Win21) {
-		_inherits(CreateRoomWin, _Win21);
+	var CreateRoomWin = function (_Win25) {
+		_inherits(CreateRoomWin, _Win25);
 
 		function CreateRoomWin(closeHandler) {
 			_classCallCheck(this, CreateRoomWin);
@@ -12762,8 +13109,8 @@
 
 	var JoinRoomWinInst = null;
 
-	var JoinRoomWin = function (_Win22) {
-		_inherits(JoinRoomWin, _Win22);
+	var JoinRoomWin = function (_Win26) {
+		_inherits(JoinRoomWin, _Win26);
 
 		function JoinRoomWin() {
 			_classCallCheck(this, JoinRoomWin);
@@ -12844,16 +13191,16 @@
 		};
 	}();
 
-	var ShowMailWin = function (_Win23) {
-		_inherits(ShowMailWin, _Win23);
+	var ShowMailWin = function (_Win27) {
+		_inherits(ShowMailWin, _Win27);
 
 		function ShowMailWin() {
 			_classCallCheck(this, ShowMailWin);
 
-			var _this26 = _possibleConstructorReturn(this, (ShowMailWin.__proto__ || Object.getPrototypeOf(ShowMailWin)).call(this, 'showMail'));
+			var _this30 = _possibleConstructorReturn(this, (ShowMailWin.__proto__ || Object.getPrototypeOf(ShowMailWin)).call(this, 'showMail'));
 
-			_this26._ack = {};
-			return _this26;
+			_this30._ack = {};
+			return _this30;
 		}
 
 		_createClass(ShowMailWin, [{
@@ -12907,8 +13254,8 @@
 		return ShowMailWin;
 	}(Win);
 
-	var SettingWin = function (_Win24) {
-		_inherits(SettingWin, _Win24);
+	var SettingWin = function (_Win28) {
+		_inherits(SettingWin, _Win28);
 
 		function SettingWin(onclose) {
 			_classCallCheck(this, SettingWin);
@@ -12920,39 +13267,61 @@
 			key: 'onInit',
 			value: function onInit() {
 				_get(SettingWin.prototype.__proto__ || Object.getPrototypeOf(SettingWin.prototype), 'onInit', this).call(this);
-				// var bgm=this.contentPane.getChild('n11').asButton;
-				// bgm.selected=localStorage.getItem('bgm')!='true';
-				// bgm.onClick(null, function() {
-				// 	Laya.SoundManager.musicMuted=!bgm.selected;
-				// 	localStorage.setItem('bgm', Laya.SoundManager.musicMuted);
-				// });
-				// var snd=this.contentPane.getChild('n12').asButton;
-				// snd.selected=localStorage.getItem('snd')!='true';
-				// snd.onClick(null, function() {
-				// 	Laya.SoundManager.soundMuted=!snd.selected;
-				// 	localStorage.setItem('snd', Laya.SoundManager.soundMuted);
-				// });
-				var self = this;
-				this.contentPane.getController('isAdmin').selectedIndex = me.isAdmin ? 1 : 0;
-				this.contentPane.getChild('n11').onClick(null, function () {
-					localStorage.setItem('id', '');
-					self.hide();
-					main({ showlogin: true });
-				}
-				//this.contentPane.getChild('n26').text='ver <{version}>';
-				// this.contentPane.getChild('n27').onClick(null, function() {
-				// 	localStorage.setItem('wechatUser', '');
-				// 	require('./ui.js').active('wechat_login');
-				// });
-				);
+				var bgmVol = this.contentPane.getChild('n97'),
+				    sndVol = this.contentPane.getChild('n99');
+				var storedBgmVol, storedSndVol;
+				storedBgmVol = Number(localStorage.getItem('bgmvol'));
+				if (isNaN(storedBgmVol)) storedBgmVol = 100;
+				storedSndVol = Number(localStorage.getItem('sndvol'));
+				if (isNaN(storedSndVol)) storedSndVol = 100;
+
+				var bgm = this.contentPane.getChild('n104').asButton;
+				bgm.selected = localStorage.getItem('bgm') != 'true';
+				bgm.onClick(null, function () {
+					Laya.SoundManager.musicMuted = bgm.selected;
+					if (Laya.SoundManager.musicMuted) bgmVol.value = 0;else bgmVol.value = storedBgmVol;
+				});
+				var snd = this.contentPane.getChild('n106').asButton;
+				snd.selected = localStorage.getItem('snd') != 'true';
+				snd.onClick(null, function () {
+					Laya.SoundManager.soundMuted = snd.selected;
+					if (Laya.SoundManager.soundMuted) sndVol.value = 0;else sndVol.value = storedSndVol;
+				});
+
+				bgmVol.value = bgm.selected ? 0 : storedBgmVol;
+				Laya.SoundManager.musicVolume = storedBgmVol / 100;
+				bgmVol.on('fui_state_changed', null, function () {
+					Laya.SoundManager.setMusicVolume(bgmVol.value / 100);
+					if (bgmVol.value) {
+						bgm.selected = false;
+						Laya.SoundManager.musicMuted = false;
+					}
+				});
+				sndVol.value = snd.selected ? 0 : storedSndVol;
+				Laya.SoundManager.soundVolume = storedSndVol / 100;
+				sndVol.on('fui_state_changed', null, function () {
+					Laya.SoundManager.soundVolume = sndVol.value / 100;
+					if (sndVol.value) {
+						snd.selected = false;
+						Laya.SoundManager.soundMuted = false;
+					}
+				});
+
+				this.contentPane.getChild('n101').onClick(this, function () {
+					localStorage.setItem('bgm', !Laya.SoundManager.musicMuted);
+					localStorage.setItem('snd', !Laya.SoundManager.soundMuted);
+					localStorage.setItem('bgmvol', Laya.SoundManager.musicVolume * 100);
+					localStorage.setItem('sndvol', Laya.SoundManager.soundVolume * 100);
+					this.hide();
+				});
 			}
 		}]);
 
 		return SettingWin;
 	}(Win);
 
-	var AccountWin = function (_Win25) {
-		_inherits(AccountWin, _Win25);
+	var AccountWin = function (_Win29) {
+		_inherits(AccountWin, _Win29);
 
 		function AccountWin() {
 			_classCallCheck(this, AccountWin);
@@ -12991,8 +13360,8 @@
 		return AccountWin;
 	}(Win);
 
-	var SetFaceWin = function (_Win26) {
-		_inherits(SetFaceWin, _Win26);
+	var SetFaceWin = function (_Win30) {
+		_inherits(SetFaceWin, _Win30);
 
 		function SetFaceWin() {
 			_classCallCheck(this, SetFaceWin);
@@ -13018,8 +13387,8 @@
 		return SetFaceWin;
 	}(Win);
 
-	var SetNameWin = function (_Win27) {
-		_inherits(SetNameWin, _Win27);
+	var SetNameWin = function (_Win31) {
+		_inherits(SetNameWin, _Win31);
 
 		function SetNameWin() {
 			_classCallCheck(this, SetNameWin);
@@ -13045,13 +13414,18 @@
 		return SetNameWin;
 	}(Win);
 
-	var SetPwdWin = function (_Win28) {
-		_inherits(SetPwdWin, _Win28);
+	var SetPwdWin = function (_Win32) {
+		_inherits(SetPwdWin, _Win32);
 
-		function SetPwdWin() {
+		function SetPwdWin(myid, qid, ans, onOk, onCancel) {
 			_classCallCheck(this, SetPwdWin);
 
-			return _possibleConstructorReturn(this, (SetPwdWin.__proto__ || Object.getPrototypeOf(SetPwdWin)).call(this, 'setPwd'));
+			var _this35 = _possibleConstructorReturn(this, (SetPwdWin.__proto__ || Object.getPrototypeOf(SetPwdWin)).call(this, 'setPwd'));
+
+			_this35._myid = myid;
+			_this35._qid = qid;_this35._ans = ans;
+			_this35._onOk = onOk;_this35._onCancel = onCancel;
+			return _this35;
 		}
 
 		_createClass(SetPwdWin, [{
@@ -13060,13 +13434,18 @@
 				_get(SetPwdWin.prototype.__proto__ || Object.getPrototypeOf(SetPwdWin.prototype), 'onInit', this).call(this);
 				var pane = this.contentPane,
 				    self = this;
-				pane.getChild('n3').onClick(null, function () {
-					var oldpwd = pane.getChild('n12').text;
-					var newpwd = pane.getChild('n13').text;
-					var confirmpwd = pane.getChild('n14').text;
-					if (!oldpwd || !newpwd) return tipon('输入有误').popup();
+				pane.getChild('n90').onClick(null, function () {
+					var newpwd = pane.getChild('n78').text;
+					var confirmpwd = pane.getChild('n81').text;
 					if (newpwd != confirmpwd) return tipon('两次输入密码不一致').popup();
-					_socket.sendp({ c: 'resetpwd', old: oldpwd, new: newpwd });
+					getAjax('/pf/bacc.hori/user.pwdpro.setpwd', { userid: self._myid, pwd: newpwd, qid: self._qid, ans: self._ans }, function (err) {
+						if (err) {
+							tipon(err).popup();
+							self._onCancel && self.onCancel();
+							return;
+						}
+						self._onOk && self._onOk(newpwd);
+					});
 					self.hide();
 				});
 			}
@@ -13081,11 +13460,11 @@
 		function InfoWin(str) {
 			_classCallCheck(this, InfoWin);
 
-			var _this32 = _possibleConstructorReturn(this, (InfoWin.__proto__ || Object.getPrototypeOf(InfoWin)).call(this));
+			var _this36 = _possibleConstructorReturn(this, (InfoWin.__proto__ || Object.getPrototypeOf(InfoWin)).call(this));
 
-			_this32.str = str;
-			_this32.arrowPt = { x: Laya.stage.mouseX, y: Laya.stage.mouseY };
-			return _this32;
+			_this36.str = str;
+			_this36.arrowPt = { x: Laya.stage.mouseX, y: Laya.stage.mouseY };
+			return _this36;
 		}
 
 		_createClass(InfoWin, [{
@@ -13107,8 +13486,8 @@
 		return InfoWin;
 	}(fairygui.Window);
 
-	var ComUserWin = function (_Win29) {
-		_inherits(ComUserWin, _Win29);
+	var ComUserWin = function (_Win33) {
+		_inherits(ComUserWin, _Win33);
 
 		function ComUserWin() {
 			_classCallCheck(this, ComUserWin);
@@ -13153,16 +13532,20 @@
 		SetNameWin: SetNameWin,
 		SetPwdWin: SetPwdWin,
 		RestPlayersWin: RestPlayersWin,
-		PersonHisWin: PersonHisWin
+		PersonHisWin: PersonHisWin,
+		MyCreditsWin: MyCreditsWin,
+		UserInfoWin: UserInfoWin,
+		VerifyPwdProtectWin: VerifyPwdProtectWin,
+		SetSecPwdWin: SetSecPwdWin
 	};
 	module.exports = wins;
 
 /***/ },
-/* 32 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var util = __webpack_require__(33);
+	var util = __webpack_require__(35);
 
 	var tokenize = function(/*String*/ str, /*RegExp*/ re, /*Function?*/ parseDelim, /*Object?*/ instance){
 	  // summary:
@@ -13615,7 +13998,7 @@
 	module.exports = function(){
 	  var args = Array.prototype.slice.call(arguments),
 	    stream, format;
-	  if(args[0] instanceof __webpack_require__(36).Stream){
+	  if(args[0] instanceof __webpack_require__(38).Stream){
 	    stream = args.shift();
 	  }
 	  format = args.shift();
@@ -13632,7 +14015,7 @@
 
 
 /***/ },
-/* 33 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -14160,7 +14543,7 @@
 	}
 	exports.isPrimitive = isPrimitive;
 
-	exports.isBuffer = __webpack_require__(34);
+	exports.isBuffer = __webpack_require__(36);
 
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
@@ -14204,7 +14587,7 @@
 	 *     prototype.
 	 * @param {function} superCtor Constructor function to inherit prototype from.
 	 */
-	exports.inherits = __webpack_require__(35);
+	exports.inherits = __webpack_require__(37);
 
 	exports._extend = function(origin, add) {
 	  // Don't do anything if add isn't an object
@@ -14225,7 +14608,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(9)))
 
 /***/ },
-/* 34 */
+/* 36 */
 /***/ function(module, exports) {
 
 	module.exports = function isBuffer(arg) {
@@ -14236,7 +14619,7 @@
 	}
 
 /***/ },
-/* 35 */
+/* 37 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -14265,7 +14648,7 @@
 
 
 /***/ },
-/* 36 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -14292,14 +14675,14 @@
 	module.exports = Stream;
 
 	var EE = __webpack_require__(23).EventEmitter;
-	var inherits = __webpack_require__(37);
+	var inherits = __webpack_require__(39);
 
 	inherits(Stream, EE);
-	Stream.Readable = __webpack_require__(38);
-	Stream.Writable = __webpack_require__(53);
-	Stream.Duplex = __webpack_require__(54);
-	Stream.Transform = __webpack_require__(55);
-	Stream.PassThrough = __webpack_require__(56);
+	Stream.Readable = __webpack_require__(40);
+	Stream.Writable = __webpack_require__(55);
+	Stream.Duplex = __webpack_require__(56);
+	Stream.Transform = __webpack_require__(57);
+	Stream.PassThrough = __webpack_require__(58);
 
 	// Backwards-compat with node 0.4.x
 	Stream.Stream = Stream;
@@ -14398,7 +14781,7 @@
 
 
 /***/ },
-/* 37 */
+/* 39 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -14427,21 +14810,21 @@
 
 
 /***/ },
-/* 38 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {var Stream = (function (){
 	  try {
-	    return __webpack_require__(36); // hack to fix a circular dependency issue when used with browserify
+	    return __webpack_require__(38); // hack to fix a circular dependency issue when used with browserify
 	  } catch(_){}
 	}());
-	exports = module.exports = __webpack_require__(39);
+	exports = module.exports = __webpack_require__(41);
 	exports.Stream = Stream || exports;
 	exports.Readable = exports;
-	exports.Writable = __webpack_require__(48);
-	exports.Duplex = __webpack_require__(47);
-	exports.Transform = __webpack_require__(51);
-	exports.PassThrough = __webpack_require__(52);
+	exports.Writable = __webpack_require__(50);
+	exports.Duplex = __webpack_require__(49);
+	exports.Transform = __webpack_require__(53);
+	exports.PassThrough = __webpack_require__(54);
 
 	if (!process.browser && process.env.READABLE_STREAM === 'disable' && Stream) {
 	  module.exports = Stream;
@@ -14450,7 +14833,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ },
-/* 39 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -14458,11 +14841,11 @@
 	module.exports = Readable;
 
 	/*<replacement>*/
-	var processNextTick = __webpack_require__(40);
+	var processNextTick = __webpack_require__(42);
 	/*</replacement>*/
 
 	/*<replacement>*/
-	var isArray = __webpack_require__(41);
+	var isArray = __webpack_require__(43);
 	/*</replacement>*/
 
 	/*<replacement>*/
@@ -14483,7 +14866,7 @@
 	var Stream;
 	(function () {
 	  try {
-	    Stream = __webpack_require__(36);
+	    Stream = __webpack_require__(38);
 	  } catch (_) {} finally {
 	    if (!Stream) Stream = __webpack_require__(23).EventEmitter;
 	  }
@@ -14492,16 +14875,16 @@
 
 	var Buffer = __webpack_require__(11).Buffer;
 	/*<replacement>*/
-	var bufferShim = __webpack_require__(42);
+	var bufferShim = __webpack_require__(44);
 	/*</replacement>*/
 
 	/*<replacement>*/
-	var util = __webpack_require__(43);
-	util.inherits = __webpack_require__(44);
+	var util = __webpack_require__(45);
+	util.inherits = __webpack_require__(46);
 	/*</replacement>*/
 
 	/*<replacement>*/
-	var debugUtil = __webpack_require__(45);
+	var debugUtil = __webpack_require__(47);
 	var debug = void 0;
 	if (debugUtil && debugUtil.debuglog) {
 	  debug = debugUtil.debuglog('stream');
@@ -14510,7 +14893,7 @@
 	}
 	/*</replacement>*/
 
-	var BufferList = __webpack_require__(46);
+	var BufferList = __webpack_require__(48);
 	var StringDecoder;
 
 	util.inherits(Readable, Stream);
@@ -14530,7 +14913,7 @@
 	}
 
 	function ReadableState(options, stream) {
-	  Duplex = Duplex || __webpack_require__(47);
+	  Duplex = Duplex || __webpack_require__(49);
 
 	  options = options || {};
 
@@ -14592,14 +14975,14 @@
 	  this.decoder = null;
 	  this.encoding = null;
 	  if (options.encoding) {
-	    if (!StringDecoder) StringDecoder = __webpack_require__(50).StringDecoder;
+	    if (!StringDecoder) StringDecoder = __webpack_require__(52).StringDecoder;
 	    this.decoder = new StringDecoder(options.encoding);
 	    this.encoding = options.encoding;
 	  }
 	}
 
 	function Readable(options) {
-	  Duplex = Duplex || __webpack_require__(47);
+	  Duplex = Duplex || __webpack_require__(49);
 
 	  if (!(this instanceof Readable)) return new Readable(options);
 
@@ -14702,7 +15085,7 @@
 
 	// backwards compatibility.
 	Readable.prototype.setEncoding = function (enc) {
-	  if (!StringDecoder) StringDecoder = __webpack_require__(50).StringDecoder;
+	  if (!StringDecoder) StringDecoder = __webpack_require__(52).StringDecoder;
 	  this._readableState.decoder = new StringDecoder(enc);
 	  this._readableState.encoding = enc;
 	  return this;
@@ -15397,7 +15780,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ },
-/* 40 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -15447,7 +15830,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ },
-/* 41 */
+/* 43 */
 /***/ function(module, exports) {
 
 	var toString = {}.toString;
@@ -15458,7 +15841,7 @@
 
 
 /***/ },
-/* 42 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
@@ -15573,7 +15956,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 43 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {// Copyright Joyent, Inc. and other Node contributors.
@@ -15687,7 +16070,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11).Buffer))
 
 /***/ },
-/* 44 */
+/* 46 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -15716,20 +16099,20 @@
 
 
 /***/ },
-/* 45 */
+/* 47 */
 /***/ function(module, exports) {
 
 	/* (ignored) */
 
 /***/ },
-/* 46 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var Buffer = __webpack_require__(11).Buffer;
 	/*<replacement>*/
-	var bufferShim = __webpack_require__(42);
+	var bufferShim = __webpack_require__(44);
 	/*</replacement>*/
 
 	module.exports = BufferList;
@@ -15791,7 +16174,7 @@
 	};
 
 /***/ },
-/* 47 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// a duplex stream is just a stream that is both readable and writable.
@@ -15814,16 +16197,16 @@
 	module.exports = Duplex;
 
 	/*<replacement>*/
-	var processNextTick = __webpack_require__(40);
+	var processNextTick = __webpack_require__(42);
 	/*</replacement>*/
 
 	/*<replacement>*/
-	var util = __webpack_require__(43);
-	util.inherits = __webpack_require__(44);
+	var util = __webpack_require__(45);
+	util.inherits = __webpack_require__(46);
 	/*</replacement>*/
 
-	var Readable = __webpack_require__(39);
-	var Writable = __webpack_require__(48);
+	var Readable = __webpack_require__(41);
+	var Writable = __webpack_require__(50);
 
 	util.inherits(Duplex, Readable);
 
@@ -15871,7 +16254,7 @@
 	}
 
 /***/ },
-/* 48 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process, setImmediate) {// A bit simpler than readable streams.
@@ -15883,7 +16266,7 @@
 	module.exports = Writable;
 
 	/*<replacement>*/
-	var processNextTick = __webpack_require__(40);
+	var processNextTick = __webpack_require__(42);
 	/*</replacement>*/
 
 	/*<replacement>*/
@@ -15897,13 +16280,13 @@
 	Writable.WritableState = WritableState;
 
 	/*<replacement>*/
-	var util = __webpack_require__(43);
-	util.inherits = __webpack_require__(44);
+	var util = __webpack_require__(45);
+	util.inherits = __webpack_require__(46);
 	/*</replacement>*/
 
 	/*<replacement>*/
 	var internalUtil = {
-	  deprecate: __webpack_require__(49)
+	  deprecate: __webpack_require__(51)
 	};
 	/*</replacement>*/
 
@@ -15911,7 +16294,7 @@
 	var Stream;
 	(function () {
 	  try {
-	    Stream = __webpack_require__(36);
+	    Stream = __webpack_require__(38);
 	  } catch (_) {} finally {
 	    if (!Stream) Stream = __webpack_require__(23).EventEmitter;
 	  }
@@ -15920,7 +16303,7 @@
 
 	var Buffer = __webpack_require__(11).Buffer;
 	/*<replacement>*/
-	var bufferShim = __webpack_require__(42);
+	var bufferShim = __webpack_require__(44);
 	/*</replacement>*/
 
 	util.inherits(Writable, Stream);
@@ -15935,7 +16318,7 @@
 	}
 
 	function WritableState(options, stream) {
-	  Duplex = Duplex || __webpack_require__(47);
+	  Duplex = Duplex || __webpack_require__(49);
 
 	  options = options || {};
 
@@ -16069,7 +16452,7 @@
 	}
 
 	function Writable(options) {
-	  Duplex = Duplex || __webpack_require__(47);
+	  Duplex = Duplex || __webpack_require__(49);
 
 	  // Writable ctor is applied to Duplexes, too.
 	  // `realHasInstance` is necessary because using plain `instanceof`
@@ -16431,7 +16814,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9), __webpack_require__(19).setImmediate))
 
 /***/ },
-/* 49 */
+/* 51 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {
@@ -16505,7 +16888,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 50 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -16732,7 +17115,7 @@
 
 
 /***/ },
-/* 51 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// a transform stream is a readable/writable stream where you do
@@ -16781,11 +17164,11 @@
 
 	module.exports = Transform;
 
-	var Duplex = __webpack_require__(47);
+	var Duplex = __webpack_require__(49);
 
 	/*<replacement>*/
-	var util = __webpack_require__(43);
-	util.inherits = __webpack_require__(44);
+	var util = __webpack_require__(45);
+	util.inherits = __webpack_require__(46);
 	/*</replacement>*/
 
 	util.inherits(Transform, Duplex);
@@ -16919,7 +17302,7 @@
 	}
 
 /***/ },
-/* 52 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// a passthrough stream.
@@ -16930,11 +17313,11 @@
 
 	module.exports = PassThrough;
 
-	var Transform = __webpack_require__(51);
+	var Transform = __webpack_require__(53);
 
 	/*<replacement>*/
-	var util = __webpack_require__(43);
-	util.inherits = __webpack_require__(44);
+	var util = __webpack_require__(45);
+	util.inherits = __webpack_require__(46);
 	/*</replacement>*/
 
 	util.inherits(PassThrough, Transform);
@@ -16950,40 +17333,40 @@
 	};
 
 /***/ },
-/* 53 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = __webpack_require__(48)
-
-
-/***/ },
-/* 54 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = __webpack_require__(47)
-
-
-/***/ },
 /* 55 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(51)
+	module.exports = __webpack_require__(50)
 
 
 /***/ },
 /* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(52)
+	module.exports = __webpack_require__(49)
 
 
 /***/ },
 /* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = __webpack_require__(53)
+
+
+/***/ },
+/* 58 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(54)
+
+
+/***/ },
+/* 59 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict';
 
-	var printf = __webpack_require__(32);
+	var printf = __webpack_require__(34);
 
 	module.exports = {
 	    toCoinStr: function toCoinStr(coin) {
@@ -17000,7 +17383,7 @@
 	};
 
 /***/ },
-/* 58 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -34091,7 +34474,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(3)(module)))
 
 /***/ },
-/* 59 */
+/* 61 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//test url : https://ccdcapi.alipay.com/validateAndCacheCardInfo.json?cardNo=6222005865412565805&cardBinCheck=true
@@ -35614,7 +35997,7 @@
 	        return cbf(null, info);
 	      } else {
 	        if (typeof module !== 'undefined' && module.exports) {
-	          var https = __webpack_require__(60);
+	          var https = __webpack_require__(62);
 	          https.get("https://ccdcapi.alipay.com/validateAndCacheCardInfo.json?_input_charset=utf-8&cardNo=" + cardNo + "&cardBinCheck=true", function(res) {
 	            if (res.statusCode == 200) {
 	              var chunk = "";
@@ -35678,7 +36061,7 @@
 	  }
 
 	  function promiseApi(cardNo, cbf) {
-	    var Promise = __webpack_require__(69);
+	    var Promise = __webpack_require__(71);
 	    return new Promise(function(resolve, reject) {
 	      getBankBin(cardNo, function(err, data) {
 	        if (err) {
@@ -35713,10 +36096,10 @@
 	}.call(this));
 
 /***/ },
-/* 60 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var http = __webpack_require__(61);
+	var http = __webpack_require__(63);
 
 	var https = module.exports;
 
@@ -35733,12 +36116,12 @@
 
 
 /***/ },
-/* 61 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {var ClientRequest = __webpack_require__(62)
-	var extend = __webpack_require__(67)
-	var statusCodes = __webpack_require__(68)
+	/* WEBPACK VAR INJECTION */(function(global) {var ClientRequest = __webpack_require__(64)
+	var extend = __webpack_require__(69)
+	var statusCodes = __webpack_require__(70)
 	var url = __webpack_require__(1)
 
 	var http = exports
@@ -35818,14 +36201,14 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 62 */
+/* 64 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer, global, process) {var capability = __webpack_require__(63)
-	var inherits = __webpack_require__(64)
-	var response = __webpack_require__(65)
-	var stream = __webpack_require__(38)
-	var toArrayBuffer = __webpack_require__(66)
+	/* WEBPACK VAR INJECTION */(function(Buffer, global, process) {var capability = __webpack_require__(65)
+	var inherits = __webpack_require__(66)
+	var response = __webpack_require__(67)
+	var stream = __webpack_require__(40)
+	var toArrayBuffer = __webpack_require__(68)
 
 	var IncomingMessage = response.IncomingMessage
 	var rStates = response.readyStates
@@ -36107,7 +36490,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11).Buffer, (function() { return this; }()), __webpack_require__(9)))
 
 /***/ },
-/* 63 */
+/* 65 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableStream)
@@ -36154,7 +36537,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 64 */
+/* 66 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -36183,12 +36566,12 @@
 
 
 /***/ },
-/* 65 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(process, Buffer, global) {var capability = __webpack_require__(63)
-	var inherits = __webpack_require__(64)
-	var stream = __webpack_require__(38)
+	/* WEBPACK VAR INJECTION */(function(process, Buffer, global) {var capability = __webpack_require__(65)
+	var inherits = __webpack_require__(66)
+	var stream = __webpack_require__(40)
 
 	var rStates = exports.readyStates = {
 		UNSENT: 0,
@@ -36370,7 +36753,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9), __webpack_require__(11).Buffer, (function() { return this; }())))
 
 /***/ },
-/* 66 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Buffer = __webpack_require__(11).Buffer
@@ -36403,7 +36786,7 @@
 
 
 /***/ },
-/* 67 */
+/* 69 */
 /***/ function(module, exports) {
 
 	module.exports = extend
@@ -36428,7 +36811,7 @@
 
 
 /***/ },
-/* 68 */
+/* 70 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -36497,7 +36880,7 @@
 
 
 /***/ },
-/* 69 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -36508,13 +36891,13 @@
 	    catch (e) {}
 	    return bluebird;
 	}
-	var bluebird = __webpack_require__(70)();
+	var bluebird = __webpack_require__(72)();
 	bluebird.noConflict = noConflict;
 	module.exports = bluebird;
 
 
 /***/ },
-/* 70 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {"use strict";
@@ -36530,7 +36913,7 @@
 	};
 	function Proxyable() {}
 	var UNDEFINED_BINDING = {};
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 
 	var getDomain;
 	if (util.isNode) {
@@ -36546,11 +36929,11 @@
 	}
 	util.notEnumerableProp(Promise, "_getDomain", getDomain);
 
-	var es5 = __webpack_require__(72);
-	var Async = __webpack_require__(73);
+	var es5 = __webpack_require__(74);
+	var Async = __webpack_require__(75);
 	var async = new Async();
 	es5.defineProperty(Promise, "_async", {value: async});
-	var errors = __webpack_require__(76);
+	var errors = __webpack_require__(78);
 	var TypeError = Promise.TypeError = errors.TypeError;
 	Promise.RangeError = errors.RangeError;
 	var CancellationError = Promise.CancellationError = errors.CancellationError;
@@ -36561,19 +36944,19 @@
 	var INTERNAL = function(){};
 	var APPLY = {};
 	var NEXT_FILTER = {};
-	var tryConvertToPromise = __webpack_require__(77)(Promise, INTERNAL);
+	var tryConvertToPromise = __webpack_require__(79)(Promise, INTERNAL);
 	var PromiseArray =
-	    __webpack_require__(78)(Promise, INTERNAL,
+	    __webpack_require__(80)(Promise, INTERNAL,
 	                               tryConvertToPromise, apiRejection, Proxyable);
-	var Context = __webpack_require__(79)(Promise);
+	var Context = __webpack_require__(81)(Promise);
 	 /*jshint unused:false*/
 	var createContext = Context.create;
-	var debug = __webpack_require__(80)(Promise, Context);
+	var debug = __webpack_require__(82)(Promise, Context);
 	var CapturedTrace = debug.CapturedTrace;
 	var PassThroughHandlerContext =
-	    __webpack_require__(81)(Promise, tryConvertToPromise, NEXT_FILTER);
-	var catchFilter = __webpack_require__(82)(NEXT_FILTER);
-	var nodebackForPromise = __webpack_require__(83);
+	    __webpack_require__(83)(Promise, tryConvertToPromise, NEXT_FILTER);
+	var catchFilter = __webpack_require__(84)(NEXT_FILTER);
+	var nodebackForPromise = __webpack_require__(85);
 	var errorObj = util.errorObj;
 	var tryCatch = util.tryCatch;
 	function check(self, executor) {
@@ -37243,31 +37626,31 @@
 	                       "_makeSelfResolutionError",
 	                       makeSelfResolutionError);
 
-	__webpack_require__(84)(Promise, INTERNAL, tryConvertToPromise, apiRejection,
+	__webpack_require__(86)(Promise, INTERNAL, tryConvertToPromise, apiRejection,
 	    debug);
-	__webpack_require__(85)(Promise, INTERNAL, tryConvertToPromise, debug);
-	__webpack_require__(86)(Promise, PromiseArray, apiRejection, debug);
-	__webpack_require__(87)(Promise);
-	__webpack_require__(88)(Promise);
-	__webpack_require__(89)(
+	__webpack_require__(87)(Promise, INTERNAL, tryConvertToPromise, debug);
+	__webpack_require__(88)(Promise, PromiseArray, apiRejection, debug);
+	__webpack_require__(89)(Promise);
+	__webpack_require__(90)(Promise);
+	__webpack_require__(91)(
 	    Promise, PromiseArray, tryConvertToPromise, INTERNAL, async, getDomain);
 	Promise.Promise = Promise;
 	Promise.version = "3.5.0";
-	__webpack_require__(90)(Promise, PromiseArray, apiRejection, tryConvertToPromise, INTERNAL, debug);
-	__webpack_require__(91)(Promise);
-	__webpack_require__(92)(Promise, apiRejection, tryConvertToPromise, createContext, INTERNAL, debug);
-	__webpack_require__(93)(Promise, INTERNAL, debug);
-	__webpack_require__(94)(Promise, apiRejection, INTERNAL, tryConvertToPromise, Proxyable, debug);
-	__webpack_require__(95)(Promise);
-	__webpack_require__(96)(Promise, INTERNAL);
-	__webpack_require__(97)(Promise, PromiseArray, tryConvertToPromise, apiRejection);
-	__webpack_require__(98)(Promise, INTERNAL, tryConvertToPromise, apiRejection);
-	__webpack_require__(99)(Promise, PromiseArray, apiRejection, tryConvertToPromise, INTERNAL, debug);
-	__webpack_require__(100)(Promise, PromiseArray, debug);
-	__webpack_require__(101)(Promise, PromiseArray, apiRejection);
-	__webpack_require__(102)(Promise, INTERNAL);
-	__webpack_require__(103)(Promise, INTERNAL);
-	__webpack_require__(104)(Promise);
+	__webpack_require__(92)(Promise, PromiseArray, apiRejection, tryConvertToPromise, INTERNAL, debug);
+	__webpack_require__(93)(Promise);
+	__webpack_require__(94)(Promise, apiRejection, tryConvertToPromise, createContext, INTERNAL, debug);
+	__webpack_require__(95)(Promise, INTERNAL, debug);
+	__webpack_require__(96)(Promise, apiRejection, INTERNAL, tryConvertToPromise, Proxyable, debug);
+	__webpack_require__(97)(Promise);
+	__webpack_require__(98)(Promise, INTERNAL);
+	__webpack_require__(99)(Promise, PromiseArray, tryConvertToPromise, apiRejection);
+	__webpack_require__(100)(Promise, INTERNAL, tryConvertToPromise, apiRejection);
+	__webpack_require__(101)(Promise, PromiseArray, apiRejection, tryConvertToPromise, INTERNAL, debug);
+	__webpack_require__(102)(Promise, PromiseArray, debug);
+	__webpack_require__(103)(Promise, PromiseArray, apiRejection);
+	__webpack_require__(104)(Promise, INTERNAL);
+	__webpack_require__(105)(Promise, INTERNAL);
+	__webpack_require__(106)(Promise);
 	                                                         
 	    util.toFastProperties(Promise);                                          
 	    util.toFastProperties(Promise.prototype);                                
@@ -37296,11 +37679,11 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ },
-/* 71 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {"use strict";
-	var es5 = __webpack_require__(72);
+	var es5 = __webpack_require__(74);
 	var canEvaluate = typeof navigator == "undefined";
 
 	var errorObj = {e: {}};
@@ -37682,7 +38065,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(9)))
 
 /***/ },
-/* 72 */
+/* 74 */
 /***/ function(module, exports) {
 
 	var isES5 = (function(){
@@ -37768,15 +38151,15 @@
 
 
 /***/ },
-/* 73 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {"use strict";
 	var firstLineError;
 	try {throw new Error(); } catch (e) {firstLineError = e;}
-	var schedule = __webpack_require__(74);
-	var Queue = __webpack_require__(75);
-	var util = __webpack_require__(71);
+	var schedule = __webpack_require__(76);
+	var Queue = __webpack_require__(77);
+	var util = __webpack_require__(73);
 
 	function Async() {
 	    this._customScheduler = false;
@@ -37936,11 +38319,11 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ },
-/* 74 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process, setImmediate) {"use strict";
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var schedule;
 	var noAsyncScheduler = function() {
 	    throw new Error("No async scheduler available\u000a\u000a    See http://goo.gl/MqrFmX\u000a");
@@ -38004,7 +38387,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(9), __webpack_require__(19).setImmediate))
 
 /***/ },
-/* 75 */
+/* 77 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -38083,13 +38466,13 @@
 
 
 /***/ },
-/* 76 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var es5 = __webpack_require__(72);
+	var es5 = __webpack_require__(74);
 	var Objectfreeze = es5.freeze;
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var inherits = util.inherits;
 	var notEnumerableProp = util.notEnumerableProp;
 
@@ -38205,12 +38588,12 @@
 
 
 /***/ },
-/* 77 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise, INTERNAL) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var errorObj = util.errorObj;
 	var isObject = util.isObject;
 
@@ -38297,13 +38680,13 @@
 
 
 /***/ },
-/* 78 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise, INTERNAL, tryConvertToPromise,
 	    apiRejection, Proxyable) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var isArray = util.isArray;
 
 	function toResolutionValue(val) {
@@ -38488,7 +38871,7 @@
 
 
 /***/ },
-/* 79 */
+/* 81 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -38563,15 +38946,15 @@
 
 
 /***/ },
-/* 80 */
+/* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {"use strict";
 	module.exports = function(Promise, Context) {
 	var getDomain = Promise._getDomain;
 	var async = Promise._async;
-	var Warning = __webpack_require__(76).Warning;
-	var util = __webpack_require__(71);
+	var Warning = __webpack_require__(78).Warning;
+	var util = __webpack_require__(73);
 	var canAttachTrace = util.canAttachTrace;
 	var unhandledRejectionHandled;
 	var possiblyUnhandledRejection;
@@ -39486,15 +39869,15 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ },
-/* 81 */
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise, tryConvertToPromise, NEXT_FILTER) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var CancellationError = Promise.CancellationError;
 	var errorObj = util.errorObj;
-	var catchFilter = __webpack_require__(82)(NEXT_FILTER);
+	var catchFilter = __webpack_require__(84)(NEXT_FILTER);
 
 	function PassThroughHandlerContext(promise, type, handler) {
 	    this.promise = promise;
@@ -39638,13 +40021,13 @@
 
 
 /***/ },
-/* 82 */
+/* 84 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(NEXT_FILTER) {
-	var util = __webpack_require__(71);
-	var getKeys = __webpack_require__(72).keys;
+	var util = __webpack_require__(73);
+	var getKeys = __webpack_require__(74).keys;
 	var tryCatch = util.tryCatch;
 	var errorObj = util.errorObj;
 
@@ -39686,15 +40069,15 @@
 
 
 /***/ },
-/* 83 */
+/* 85 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var maybeWrapAsError = util.maybeWrapAsError;
-	var errors = __webpack_require__(76);
+	var errors = __webpack_require__(78);
 	var OperationalError = errors.OperationalError;
-	var es5 = __webpack_require__(72);
+	var es5 = __webpack_require__(74);
 
 	function isUntypedError(obj) {
 	    return obj instanceof Error &&
@@ -39743,13 +40126,13 @@
 
 
 /***/ },
-/* 84 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports =
 	function(Promise, INTERNAL, tryConvertToPromise, apiRejection, debug) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var tryCatch = util.tryCatch;
 
 	Promise.method = function (fn) {
@@ -39804,7 +40187,7 @@
 
 
 /***/ },
-/* 85 */
+/* 87 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -39877,12 +40260,12 @@
 
 
 /***/ },
-/* 86 */
+/* 88 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise, PromiseArray, apiRejection, debug) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var tryCatch = util.tryCatch;
 	var errorObj = util.errorObj;
 	var async = Promise._async;
@@ -40012,7 +40395,7 @@
 
 
 /***/ },
-/* 87 */
+/* 89 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -40064,7 +40447,7 @@
 
 
 /***/ },
-/* 88 */
+/* 90 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -40173,14 +40556,14 @@
 
 
 /***/ },
-/* 89 */
+/* 91 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports =
 	function(Promise, PromiseArray, tryConvertToPromise, INTERNAL, async,
 	         getDomain) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var canEvaluate = util.canEvaluate;
 	var tryCatch = util.tryCatch;
 	var errorObj = util.errorObj;
@@ -40347,7 +40730,7 @@
 
 
 /***/ },
-/* 90 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -40358,7 +40741,7 @@
 	                          INTERNAL,
 	                          debug) {
 	var getDomain = Promise._getDomain;
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var tryCatch = util.tryCatch;
 	var errorObj = util.errorObj;
 	var async = Promise._async;
@@ -40521,7 +40904,7 @@
 
 
 /***/ },
-/* 91 */
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -40533,7 +40916,7 @@
 	}
 
 	module.exports = function(Promise) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var canEvaluate = util.canEvaluate;
 	var isIdentifier = util.isIdentifier;
 
@@ -40650,15 +41033,15 @@
 
 
 /***/ },
-/* 92 */
+/* 94 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function (Promise, apiRejection, tryConvertToPromise,
 	    createContext, INTERNAL, debug) {
-	    var util = __webpack_require__(71);
-	    var TypeError = __webpack_require__(76).TypeError;
-	    var inherits = __webpack_require__(71).inherits;
+	    var util = __webpack_require__(73);
+	    var TypeError = __webpack_require__(78).TypeError;
+	    var inherits = __webpack_require__(73).inherits;
 	    var errorObj = util.errorObj;
 	    var tryCatch = util.tryCatch;
 	    var NULL = {};
@@ -40882,12 +41265,12 @@
 
 
 /***/ },
-/* 93 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise, INTERNAL, debug) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var TimeoutError = Promise.TimeoutError;
 
 	function HandleWrapper(handle)  {
@@ -40981,7 +41364,7 @@
 
 
 /***/ },
-/* 94 */
+/* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -40991,9 +41374,9 @@
 	                          tryConvertToPromise,
 	                          Proxyable,
 	                          debug) {
-	var errors = __webpack_require__(76);
+	var errors = __webpack_require__(78);
 	var TypeError = errors.TypeError;
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var errorObj = util.errorObj;
 	var tryCatch = util.tryCatch;
 	var yieldHandlers = [];
@@ -41210,12 +41593,12 @@
 
 
 /***/ },
-/* 95 */
+/* 97 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var async = Promise._async;
 	var tryCatch = util.tryCatch;
 	var errorObj = util.errorObj;
@@ -41274,18 +41657,18 @@
 
 
 /***/ },
-/* 96 */
+/* 98 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(Promise, INTERNAL) {
 	var THIS = {};
-	var util = __webpack_require__(71);
-	var nodebackForPromise = __webpack_require__(83);
+	var util = __webpack_require__(73);
+	var nodebackForPromise = __webpack_require__(85);
 	var withAppended = util.withAppended;
 	var maybeWrapAsError = util.maybeWrapAsError;
 	var canEvaluate = util.canEvaluate;
-	var TypeError = __webpack_require__(76).TypeError;
+	var TypeError = __webpack_require__(78).TypeError;
 	var defaultSuffix = "Async";
 	var defaultPromisified = {__isPromisified__: true};
 	var noCopyProps = [
@@ -41594,15 +41977,15 @@
 
 
 /***/ },
-/* 97 */
+/* 99 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(
 	    Promise, PromiseArray, tryConvertToPromise, apiRejection) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var isObject = util.isObject;
-	var es5 = __webpack_require__(72);
+	var es5 = __webpack_require__(74);
 	var Es6Map;
 	if (typeof Map === "function") Es6Map = Map;
 
@@ -41718,13 +42101,13 @@
 
 
 /***/ },
-/* 98 */
+/* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports = function(
 	    Promise, INTERNAL, tryConvertToPromise, apiRejection) {
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 
 	var raceLater = function (promise) {
 	    return promise.then(function(array) {
@@ -41773,7 +42156,7 @@
 
 
 /***/ },
-/* 99 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -41784,7 +42167,7 @@
 	                          INTERNAL,
 	                          debug) {
 	var getDomain = Promise._getDomain;
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 	var tryCatch = util.tryCatch;
 
 	function ReductionPromiseArray(promises, fn, initialValue, _each) {
@@ -41951,14 +42334,14 @@
 
 
 /***/ },
-/* 100 */
+/* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports =
 	    function(Promise, PromiseArray, debug) {
 	var PromiseInspection = Promise.PromiseInspection;
-	var util = __webpack_require__(71);
+	var util = __webpack_require__(73);
 
 	function SettledPromiseArray(values) {
 	    this.constructor$(values);
@@ -42000,15 +42383,15 @@
 
 
 /***/ },
-/* 101 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	module.exports =
 	function(Promise, PromiseArray, apiRejection) {
-	var util = __webpack_require__(71);
-	var RangeError = __webpack_require__(76).RangeError;
-	var AggregateError = __webpack_require__(76).AggregateError;
+	var util = __webpack_require__(73);
+	var RangeError = __webpack_require__(78).RangeError;
+	var AggregateError = __webpack_require__(78).AggregateError;
 	var isArray = util.isArray;
 	var CANCELLATION = {};
 
@@ -42154,7 +42537,7 @@
 
 
 /***/ },
-/* 102 */
+/* 104 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -42172,7 +42555,7 @@
 
 
 /***/ },
-/* 103 */
+/* 105 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -42208,7 +42591,7 @@
 
 
 /***/ },
-/* 104 */
+/* 106 */
 /***/ function(module, exports) {
 
 	"use strict";

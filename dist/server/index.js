@@ -8,7 +8,12 @@ var onlineUsers=require('./online.js'), alltables=require('./tables.js');
 var User=require('./User.js');
 
 function send(data) {
-	var payload=JSON.stringify(data);
+	try {
+		var payload=JSON.stringify(data);
+	} catch(e) {
+		debugout('following data has problem', data.seats);
+		return;
+	}
 	function _h(err) {
 		//err && debugout(err, '@ sending', data);
 	}
@@ -43,9 +48,10 @@ function chkpwd(userid, pwd, cb) {
 function afterUserIn(err, pack, ws, dbuser) {
 	if (err) return ws.sendp({err:err});
 	if (dbuser) {
+		if (dbuser.block>new Date()) return ws.sendp({err:{message:'账号被封停', view:'login'}});
 		if (!dbuser.__created) {
-			if (dbuser.pwd && dbuser.pwd!=pack.pwd) return ws.sendp({err:'账号密码错'});
-			ws.sendp({user:{showId:dbuser.showId, isAdmin:dbuser.isAdmin, bank:dbuser.bank, savedMoney:dbuser.savedMoney}});
+			if (dbuser.pwd && dbuser.pwd!=pack.pwd) return ws.sendp({err:{message:'账号密码错', view:'login'}});
+			ws.sendp({user:{id:dbuser._id, showId:dbuser.showId, isAdmin:dbuser.isAdmin, bank:dbuser.bank, savedMoney:dbuser.savedMoney, hasSecpwd:(!!dbuser.secpwd)}});
 		}
 		else {
 			dbuser.pwd=pack.pwd;
@@ -57,7 +63,7 @@ function afterUserIn(err, pack, ws, dbuser) {
 				dbuser.province=pack.province;
 				dbuser.city=pack.city;
 				dbuser.coins=dbuser.coins;
-				ws.sendp({user:{showId:dbuser.showId, isAdmin:dbuser.isAdmin, bank:dbuser.bank, savedMoney:dbuser.savedMoney}});
+				ws.sendp({user:{id:dbuser._id, showId:dbuser.showId, isAdmin:dbuser.isAdmin, bank:dbuser.bank, savedMoney:dbuser.savedMoney, hasSecpwd:(!!dbuser.secpwd)}});
 				delete dbuser.__created;
 			});
 		}
@@ -68,7 +74,8 @@ function afterUserIn(err, pack, ws, dbuser) {
 	if (!oldUser) {
 		ws.user=new User(ws, dbuser);
 		onlineUsers.add(ws.user);
-		dbuser.nickname=pack.nickname||pack.id;
+		if (pack.nickname) dbuser.nickname=pack.nickname;
+		else if (dbuser.nickname==null) dbuser.nickname=pack.id;
 		pack.face && (dbuser.face=pack.face);
 	}
 	else {
@@ -111,6 +118,7 @@ module.exports=function msgHandler(db, createDbJson, wss) {
 
 	wss.on('connection', function connection(ws) {
 		ws.sendp=ws.sendjson=send;
+		ws.__ob=true;
 		debugout('someone in');
 
 		ws.on('message', function(data) {
@@ -125,13 +133,13 @@ module.exports=function msgHandler(db, createDbJson, wss) {
 				case 'login':
 					chkpwd(pack.id, pack.pwd, function(err) {
 						if (err) return ws.sendp({err:{message:err, view:'login'}, cancelRelogin:true});
-						createDbJson(db, {col:db.users, key:pack.id, default:default_user, proj:{pwd:0}}, function(err, dbuser) {
-							if (err) return ws.sendp({err:'用户不存在'});
-							ws.user=new User(ws, dbuser);
-							ws.sendp({c:'showview', v:'hall', user:dbuser, seq:1});
-							onlineUsers.add(ws.user);
-							if (pack.room) ws.user.join(pack.room);
-							broadcast({c:'userin', userid:pack.id, nick:ws.user.nickname}, ws.user);
+						if (onlineUsers.get(pack.id)) {
+							debugout('already online, kick old');
+							afterUserIn(null, pack, ws, onlineUsers.get(pack.id).dbuser);
+						} 
+						else createDbJson(db, {col:db.users, key:pack.id, alwayscreate:true, default:default_user}, function(err, dbuser) {
+							debugout('new one');
+							afterUserIn(err, pack, ws, dbuser);
 						});
 					})
 				break;

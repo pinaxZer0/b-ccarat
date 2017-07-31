@@ -32,6 +32,7 @@
     "jrpc-client": "0.0.6",
     "localIP": "0.0.2",
     "lodash": "^4.17.4",
+    "merge": "^1.2.0",
     "mkdirp": "^0.5.1",
     "mongodb": "",
     "mysql": "^2.13.0",

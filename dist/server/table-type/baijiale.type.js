@@ -1,6 +1,6 @@
 'use strict';
 var TableBase=require('./tablebase.js');
-var async=require('async'), merge=require('merge'), clone=require('clone');
+var async=require('async'), merge=require('gy-merge'), clone=require('clone');
 var Game=require('./gamerule');
 var debugout=require('debugout')(require('yargs').argv.debugout);
 var _=require('lodash');
@@ -18,19 +18,22 @@ const GAME_STATUS={
 	FAPAI:2,
 	QIEPAI:0,
 };
+const enrollBaseCoins=2000000;
+const playerBankerSetLimits=12;
+
 class Baijiale extends TableBase {
 	constructor(roomid, type, opt) {
 		super(roomid, type, opt);
 		this.roomid=roomid;
 		this.profits=[];
 		this.profits.sum=0;
-		// this._quitList=[];
 		this.roomtype='baccarat';
 		this.gamedata.opt=merge({minZhu:10, maxZhu:7500, minDui:1, maxDui:750, maxHe:950}, opt);
 		this.opt=this.gamedata.opt;
 		this.gamedata.roomid=roomid;
 		this.gamedata.his=[];
 		this.gamedata.seats={};
+		this.gamedata.enroll=[];
 		var game=this.gamedata.game=new Game();
 		var self=this;
 		game.on('burn', function(detail) {
@@ -55,6 +58,11 @@ class Baijiale extends TableBase {
 	canEnter(user) {
 		return true;
 	}
+	leave(user) {
+		this.broadcast({c:'table.userout', id:user.id});
+		this.msgDispatcher.emit('userleave', user);
+		this.quit(user);
+	}
 	enter(user) {
 		if (this.quitTimer) clearTimeout(this.quitTimer);
 		var seat=null, gd=this.gamedata;
@@ -71,30 +79,44 @@ class Baijiale extends TableBase {
 		this.broadcast({c:'table.userin', id:user.id, nickname:user.nickname, level:user.level, face:user.dbuser.face, seat:seat});
 		user.offline=false;
 		this.msgDispatcher.emit('userin', user);
-		// if (emptyseat==1) this.run();		
 	}
-	// quit(user) {
-	// 	this._quitList.push(user);
-	// }
 	mk_transfer_gamedata(obj, idx) {
 		// 简化user对象，只传输id nickname face level score
 		//console.log(JSON.stringify(obj));
 		var self = this;
-		if (!obj.deal && !obj.seats) return {scene:obj};
+		if (obj.enroll) {
+			var a=0;
+		}
+		if (!obj.deal && !obj.seats && !obj.playerBanker && !obj.enroll) return {scene:obj};
 		obj=clone(obj);
 		if (obj.deal) {
+			if (!obj.seats) obj.seats={};
 			for (var i in obj.deal) {
+				// var u=this.scene.seats[i].user;
+				obj.seats[i]={};
 				delete obj.deal[i].user;
 			}
 		}
 		if (obj.seats) {
 			for (var i in obj.seats) {
-				var seat =obj.seats[i];
+				var seat =this.scene.seats[i];
 				if (!seat) continue;
-				var u=this.scene.seats[i].user;
+				var u=seat.user;
 				if (u) {
-					seat.user={id:u.id, nickname:u.nickname, face:u.dbuser.face, coins:u.coins, level:u.level, offline:seat.offline};
+					obj.seats[i].user={id:u.id, nickname:u.nickname, face:u.dbuser.face, coins:u.coins, level:u.level, offline:seat.offline, showId:u.showId, profit:u.profit, bankerSets:u.bankerSets};
 				}
+			}
+		}
+		if (obj.playerBanker) {
+			debugout('upd playerBanker');
+			var u=this.scene.playerBanker;
+			if (!u) delete obj.playerBanker;
+			else obj.playerBanker={id:u.id, nickname:u.nickname, coins:u.coins, bankerSets:u.bankerSets, profit:u.profit};
+		}
+		if (obj.enroll) {
+			for (var i in obj.enroll) {
+				var u=obj.enroll[i];
+				obj.enroll[i]={id:u.id, nickname:u.nickname, coins:u.coins};
 			}
 		}
 		return {scene:obj};
@@ -110,6 +132,8 @@ class Baijiale extends TableBase {
 		debugout(this.gamedata.roomid, 'new round');
 		this.q.push([
 			this.waitXiazhu.bind(this),
+			this.chooseBanker.bind(this),
+			this.adjustXianhong.bind(this),
 			this.fapai.bind(this),
 			this.jiesuan.bind(this)
 		]);
@@ -130,14 +154,60 @@ class Baijiale extends TableBase {
 		this.newgame();
 	}
 	waitUserEnter(cb) {
-		// var self=this;
 		this.msgDispatcher.once('userin', function() {
-			// self.scene.testarr=[1, 2, 3, 4, 5,6];
-			// setTimeout(function() {
-			// 	self.scene.testarr=[1];
-			// })
 			cb();
 		});
+	}
+	chooseBanker(cb) {
+		var limitSets=playerBankerSetLimits;
+		if (this.gamedata.enroll.length==0) {
+			limitSets=14;
+		}
+		var playerBanker=this.gamedata.playerBanker;
+		if (playerBanker) {
+			playerBanker.bankerSets++;
+			if (playerBanker.coins>=enrollBaseCoins && playerBanker.bankerSets<=limitSets) {
+				return cb();
+			}
+		}
+		if (this.gamedata.enroll.length==0) {
+			this.gamedata.playerBanker=null;
+			return cb();
+		}
+		var self=this, anticipate=null;
+		for (var i=0; i<this.gamedata.enroll.length; i++) {
+			anticipate=this.gamedata.enroll[i];
+			if (!anticipate.offline && anticipate.coins>=enrollBaseCoins) break;
+		}
+		if (i>=this.gamedata.enroll.length) {
+			this.gamedata.playerBanker=null;
+			this.gamedata.enroll=[];
+			return cb();
+		}
+		this.gamedata.playerBanker=anticipate;
+		this.gamedata.playerBanker.bankerSets=1;
+		this.gamedata.playerBanker.profit=0;
+		this.gamedata.enroll.splice(0, i+1);
+		return cb();
+	}
+	adjustXianhong(cb) {
+		var pb=this.gamedata.playerBanker;
+		if (!pb) {
+			this.gamedata.opt.minZhu=100;
+			this.gamedata.opt.maxZhu=200000;
+			this.gamedata.opt.minDui=100;
+			this.gamedata.opt.maxDui=20000;
+			this.gamedata.opt.maxHe=25000;
+		} else {
+			var u=pb;
+			var reasonableZhu=Math.floor(u.coins/1000000)*1000000;
+			this.gamedata.opt.minZhu=100;
+			this.gamedata.opt.maxZhu=reasonableZhu;
+			this.gamedata.opt.minDui=100;
+			this.gamedata.opt.maxDui=Math.floor(u.coins/33/10000)*10000;// u.c*1/3/11
+			this.gamedata.opt.maxHe=Math.floor(this.gamedata.opt.maxDui*19/15/10000)*10000;  // u.c/8
+		}
+		cb();
 	}
 	qiepai(cb) {
 		debugout(this.roomid, 'qiepai');
@@ -165,7 +235,6 @@ class Baijiale extends TableBase {
 		debugout(this.roomid, 'waitXiazhu');
 		var self=this, gd=this.gamedata;
 		this.gamedata.status=GAME_STATUS.KAIJU;
-		// var vus=this.allusers(true);
 		gd.deal={};
 		var total={xian:0, xianDui:0, zhuang:0, zhuangDui:0, he:0};
 		function handleXiazhu(pack, user) {
@@ -175,12 +244,12 @@ class Baijiale extends TableBase {
 				deal=gd.deal[user.id];
 			}
 			if (deal.sealed) return;
-			console.log(pack, total);
+			debugout(pack, total);
 			if (pack.xian) {
 				if (pack.xian<gd.opt.minZhu) return user.send({err:'最少下注'+gd.opt.minZhu});
 				if (pack.xian>gd.opt.maxZhu) return user.send({err:'最多下注'+gd.opt.maxZhu});
-				if (user.coins<pack.xian) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
-				if ((total.xian+pack.xian)>=(total.zhuang+gd.opt.maxZhu/3)) return user.send({err:'不能继续压闲'});
+				if (user.coins<pack.xian) return user.send({err:{message:'金豆不足，请充值', /*win:'RechargeWin'*/}});
+				if ((total.xian+pack.xian)>(total.zhuang+gd.opt.maxZhu/3)) return user.send({err:'不能继续压闲'});
 				deal.xian+=pack.xian;
 				total.xian+=pack.xian;
 				user.coins-=pack.xian;
@@ -188,33 +257,32 @@ class Baijiale extends TableBase {
 			else if (pack.zhuang) {
 				if (pack.zhuang<gd.opt.minZhu) return user.send({err:'最少下注'+gd.opt.minZhu});
 				if (pack.zhuang>gd.opt.maxZhu) return user.send({err:'最多下注'+gd.opt.maxZhu});
-				if (user.coins<pack.zhuang) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
-				if ((total.zhuang+pack.zhuang)>=(total.xian+gd.opt.maxZhu/3)) return user.send({err:'不能继续压庄'});
+				if (user.coins<pack.zhuang) return user.send({err:{message:'金豆不足，请充值', /*win:'RechargeWin'*/}});
+				if ((total.zhuang+pack.zhuang)>(total.xian+gd.opt.maxZhu/3)) return user.send({err:'不能继续压庄'});
 				deal.zhuang+=pack.zhuang;
 				total.zhuang+=pack.zhuang;
 				user.coins-=pack.zhuang;
 			}
 			else if (pack.he) {
 				if (pack.he<gd.opt.minDui) return user.send({err:'最少下注'+gd.opt.minDui});
-				if (user.coins<pack.he) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
-				if ((total.he+pack.he)>=gd.opt.maxHe) return user.send({err:'不能继续压和'});
+				if (user.coins<pack.he) return user.send({err:{message:'金豆不足，请充值', /*win:'RechargeWin'*/}});
+				if ((total.he+pack.he)>gd.opt.maxHe) return user.send({err:'不能继续压和'});
 				deal.he+=pack.he;
 				total.he+=pack.he;
 				user.coins-=pack.he;
 			}
 			else if (pack.xianDui) {
 				if (pack.xianDui<gd.opt.minDui) return user.send({err:'最少下注'+gd.opt.minDui});
-				if (user.coins<pack.xianDui) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
-				if ((total.xianDui+pack.xianDui)>=gd.opt.maxDui) return user.send({err:'不能继续压闲对'});
+				if (user.coins<pack.xianDui) return user.send({err:{message:'金豆不足，请充值', /*win:'RechargeWin'*/}});
+				if ((total.xianDui+pack.xianDui)>gd.opt.maxDui) return user.send({err:'不能继续压闲对'});
 				deal.xianDui+=pack.xianDui;
 				total.xianDui+=pack.xianDui;
 				user.coins-=pack.xianDui;
 			}
 			else if (pack.zhuangDui) {
 				if (pack.zhuangDui<gd.opt.minDui) return user.send({err:'最少下注'+gd.opt.minDui});
-				// if (pack.zhuangDui>gd.opt.maxZhu) return user.send({err:'最多下注'+gd.opt.maxZhu});				
-				if (user.coins<pack.zhuangDui) return user.send({err:{message:'金币不足，请充值', win:'RechargeWin'}});
-				if ((total.zhuangDui+pack.zhuangDui)>=gd.opt.maxDui) return user.send({err:'不能继续压庄对'});
+				if (user.coins<pack.zhuangDui) return user.send({err:{message:'金豆不足，请充值', /*win:'RechargeWin'*/}});
+				if ((total.zhuangDui+pack.zhuangDui)>gd.opt.maxDui) return user.send({err:'不能继续压庄对'});
 				deal.zhuangDui+=pack.zhuangDui;
 				total.zhuangDui+=pack.zhuangDui;
 				user.coins-=pack.zhuangDui;
@@ -232,7 +300,6 @@ class Baijiale extends TableBase {
 			var reback=(deal.xian||0)+(deal.xianDui||0)+(deal.zhuangDui||0)+(deal.he||0)+(deal.zhuang||0);
 			deal.user.coins+=reback;
 			deal.xian=deal.xianDui=deal.zhuangDui=deal.he=deal.zhuang=0;
-			// delete gd.deal[user.id];
 		}
 		function handleConfirmXiazhu(pack, user) {
 			var deal=gd.deal[user.id];
@@ -253,45 +320,6 @@ class Baijiale extends TableBase {
 		this.msgDispatcher.on('table.xiazhu', handleXiazhu)
 		.on('table.cancelXiazhu', handleCancelXiazhu)
 		.on('table.confirmXiazhu', handleConfirmXiazhu)
-		// async.each(vus, function(user, cb) {
-		// 	var deal=user.deal={xianDui:0, zhuangDui:0, he:0, xian:0, zhuang:0};
-		// 	user.createInteract({c:'table.xiazhu'}, {ans:'table.confirmXiazhu', times:1, timeout:24*1000})
-		// 	.on('final', function() {
-		// 		user.deal=deal;
-		// 		cb(null, deal);
-		// 	})
-		// 	.on('other', function(pack) {
-		// 		switch(pack.c) {
-		// 			case 'table.xiazhu':
-		// 				deal.xianDui+=pack.xianDui;
-		// 				deal.zhuangDui+=pack.zhuangDui;
-		// 				deal.he+=pack.he;
-		// 				deal.xian+=pack.xian;
-		// 				deal.zhuang+=pack.zhuang;
-		// 				//deal.delta=pack;
-
-		// 				gd.xianDui+=pack.xianDui;
-		// 				gd.zhuangDui+=pack.zhuangDui;
-		// 				gd.he+=pack.he;
-		// 				gd.xian+=pack.xian;
-		// 				gd.zhuang+=pack.zhuang;
-		// 				gd.delta=pack;
-		// 			break;
-		// 			case 'table.cancelXiazhu':
-		// 				gd.xianDui-=deal.xianDui;
-		// 				gd.zhuangDui-=deal.zhuangDui;
-		// 				gd.he-=deal.he;
-		// 				gd.xian-=deal.xian;
-		// 				gd.zhuang-=deal.zhuang;
-		// 				gd.delta={xianDui:-deal.xianDui, zhuangDui:deal.zhuangDui, he:-deal.he, xian:-deal.xian, zhuang:-deal.zhuang};
-		// 				deal={xianDui:0, zhuangDui:0, he:0, xian:0, zhuang:0};		
-		// 			break;
-		// 		}
-		// 	});
-		// },
-		// function(err, r) {
-		// 	callback();
-		// })
 	}
 	fapai(cb) {
 		this.gamedata.status=GAME_STATUS.FAPAI;
@@ -303,8 +331,8 @@ class Baijiale extends TableBase {
 	jiesuan(cb) {
 		debugout(this.roomid, 'jiesuan');
 		this.gamedata.status=0;
-		var profit=0;
-		var factor={xian:1, zhuang:0.95, xianDui:11, zhuangDui:11, he:8};
+		const factor={xian:1.02, zhuang:0.98, xianDui:11, zhuangDui:11, he:8};
+		const waterRatio=0.9;
 		var self=this, gd=this.gamedata;
 		var r=gd.his[gd.his.length-1];
 		var winArr=[];
@@ -328,15 +356,21 @@ class Baijiale extends TableBase {
 		var loseArr=_.without.apply(_, params);
 
 		var now=new Date();
+		var profit=0, water=0;
+		var updObj={seats:{}};
 		for (var k in gd.deal) {
 			var deal=gd.deal[k];
+			updObj.seats[k]={user:deal.user};
 			var orgCoins=deal.user.coins;
 			for (var i=0;i<winArr.length; i++) {
 				var usercoins=deal[winArr[i]]
 				if (!usercoins) continue;
-				var delta=usercoins*factor[winArr[i]];
-				deal.user.coins+=(delta+usercoins);
+				// 玩家赢钱
+				var delta=usercoins*factor[winArr[i]], d=Math.floor(delta*waterRatio);
+				water+=(delta-d);
+				deal.user.coins+=(d+usercoins);
 				profit-=delta;
+				debugout('player win(id, qu, wins, minus water)', deal.user.id, winArr[i], delta, d);
 			}
 			for (var i=0; i<loseArr.length; i++) {
 				profit+=(deal[loseArr[i]]||0);
@@ -345,16 +379,37 @@ class Baijiale extends TableBase {
 			delete deal.user;
 			g_db.games.insert({user:k, deal:deal, r:r, oldCoins:orgCoins, newCoins:newCoins, t:now});
 		}
-		this.profits.push({profit:profit, t:now, set:gd.setnum});
-		this.profits.sum+=profit;
-		srv_state.total_profit+=profit;
-
-		// if (this._quitList.length>0) {
-		// 	for (var i=0; i<this._quitList.length; i++) super.quit(this._quitList[i]);
-		// 	this._quitList=[];
-		// }
+		// profit里是庄家的盈利，庄盈利
+		if (this.isPlayerBanker()) {
+			updObj.seats[gd.playerBanker.id]={user:gd.playerBanker};
+			if (profit>0) {
+				var p=Math.floor(profit*waterRatio);
+				water+=(profit-p);
+				// 如果是人的庄,抽水后给他
+				gd.playerBanker.coins+=p;
+				gd.playerBanker.profit+=p;
+				debugout('banker win(profit, minus water)', profit, p);
+			} else {
+				gd.playerBanker.coins+=profit;
+				gd.playerBanker.profit+=profit;
+			}
+			// 如果是人的庄，只记录water，否则记录profit+water
+			profit=0;
+		}
+		// this.profits.push({water:water, profit:profit, t:now, set:gd.setnum /*, playerSet:isPlayerBanker()*/});
+		debugout('sys win(profit, water)', profit, water);
+		this.profits.sum+=profit+water;
+		srv_state.total_profit+=profit+water;
 
 		gd.setnum++;
+		for (var i in updObj.seats) {
+			var seat=gd.seats[i];
+			if (seat) {
+				var o=self.mk_transfer_gamedata(updObj, i);
+				o.seq=1;
+				seat.user.send(o);
+			}
+		}	
 		(function(next) {
 			if (self.allusers().length==0) {
 				debugout(self.roomid, 'no enough user');
@@ -371,6 +426,34 @@ class Baijiale extends TableBase {
 			}else self.newround();
 			setTimeout(cb, 7*1000);
 		});
+	}
+	isPlayerBanker() {
+		return (this.gamedata.playerBanker!=null);
+	}
+	msg(pack, comesfrom) {
+		var self=this;
+		switch (pack.c) {
+			case 'table.enroll':
+			if (this.gamedata.playerBanker && this.gamedata.playerBanker.id==comesfrom.id) return comesfrom.senderr('正在做帅');
+			var idx=this.gamedata.enroll.findIndex(function(ele) {
+				return ele.id==comesfrom.id;
+			});
+			if (pack.in) {
+				// if (this.allusers(true).length==1) return comesfrom.senderr('只有一个人，不能做帅');
+				if (idx>=0) return comesfrom.senderr('已经在排队了');
+				if (comesfrom.coins>=enrollBaseCoins) this.gamedata.enroll.push(comesfrom);
+				else comesfrom.senderr('金豆不足200万，不能做帅');
+			} else {
+				if (idx>=0) this.gamedata.enroll.splice(idx,1);
+			}
+			break;
+			case 'table.chat':
+				pack.nickname=comesfrom.nickname||comesfrom.id;
+				if (comesfrom.dbuser.nochat>new Date()) return comesfrom.send(pack);
+				this.broadcast(pack);
+			break;
+		}
+		return super.msg(pack, comesfrom);
 	}
 }
 

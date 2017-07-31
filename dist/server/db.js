@@ -14,6 +14,7 @@ module.exports=function (cb) {
 		{withdraw:{index:['from', '_t', 'exported']}}, 
 		{servers:{index:['order']}},
 		{games:{index:['user', 't'], capped:true, size:100*1024*1024, max:1000000}},
+		{adminlog:{index:['time', 'operatorName'], capped:true, size:100*1024*1024, max:1000000}},
 		]}, function(err, db) {
 		if (err) return cb(err);
 		__stored_db=db;

@@ -12,6 +12,7 @@ var debugout=require('debugout')(require('yargs').argv.debugout);
 
 class TableBase {
     constructor(roomid, type, opt) {
+		this.__ob=true;
 		this.code=roomid;
         this.gamedata=this.scene={};
 		this.msgDispatcher=new EventEmitter();;
@@ -42,7 +43,7 @@ class TableBase {
 					if (seat) {
 						var o=self.mk_transfer_gamedata(v, i);
 						o.seq=1;
-						if (seat.user instanceof User) seats[i].user.send(o);
+						if (seat.user instanceof User) seat.user.send(o);
 						else if (self.users[seat.user.id]) {
 							self.users[seat.user.id].send(o);
 						} else {
