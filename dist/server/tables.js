@@ -84,6 +84,7 @@ function all(showAdminData) {
 function init_tables() {
 	getDB(function(err, db) {
 		function innerServer() {
+			if (Object.keys(_tables).length>0) return;
 			availble('baijiale', {minZhu:100, maxZhu:200000, minDui:100, maxDui:20000, maxHe:25000});
 			// for (var i=0; i<1; i++) {
 			// 	availble('baijiale', {minZhu:100, maxZhu:15000, minDui:10, maxDui:1500, maxHe:1900});
